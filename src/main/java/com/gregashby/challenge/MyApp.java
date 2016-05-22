@@ -12,7 +12,7 @@ import spark.servlet.SparkApplication;
 public class MyApp implements SparkApplication {
 
 	private static Logger logger = LoggerFactory.getLogger("default");
-	
+
 	/**
 	 * This allows you to run as a java app with the embedded Jetty webserver
 	 * 
@@ -27,9 +27,9 @@ public class MyApp implements SparkApplication {
 	 * Tomcat)
 	 */
 	public void init() {
-	    
+
 		initSubscriptionApis();
-	
+
 		get("/*", (request, response) -> "Welcome to my app", new JsonTransformer());
 
 		exception(Exception.class, (exception, request, response) -> {
@@ -39,14 +39,14 @@ public class MyApp implements SparkApplication {
 	}
 
 	private void initSubscriptionApis() {
-		
+
 		get("/subscription/create", (request, response) -> {
 			logRequest(request);
 			return new String("test");
 		});
-		
+
 	}
-	
+
 	private void logRequest(Request request){
 		logger.info("----- NEW REQUEST -----");
 		logger.info("BODY: {}", request.body());
@@ -63,6 +63,8 @@ public class MyApp implements SparkApplication {
 		logger.info("URI: {}", request.uri());
 		logger.info("URL: {}", request.url());
 		logger.info("EVENT_URL: {}", request.queryParams("eventUrl"));
+		request.headers().stream()
+			.forEach(name -> logger.info("{} = {}", name, request.headers(name)));
 		
 	}
 
