@@ -6,6 +6,8 @@ import static spark.Spark.get;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.Gson;
+
 import spark.servlet.SparkApplication;
 
 public class MyApp implements SparkApplication {
@@ -28,8 +30,8 @@ public class MyApp implements SparkApplication {
 	public void init() {
 	    
 		initSubscriptionApis();
-		
-		get("/*", (request, response) -> "Welcome to my app");
+	
+		get("/*", (request, response) -> "Welcome to my app", new JsonTransformer());
 
 		exception(Exception.class, (exception, request, response) -> {
 			response.body("whoops, something bad happened");
@@ -40,7 +42,8 @@ public class MyApp implements SparkApplication {
 	private void initSubscriptionApis() {
 		
 		get("/subscription/create", (request, response) -> {
-			logger.info("I was invoked!");
+			logger.info("----- Request -----");
+			logger.info(new Gson().toJson(request));
 			return new String("test");
 		});
 		
