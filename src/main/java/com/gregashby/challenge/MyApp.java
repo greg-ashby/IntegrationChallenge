@@ -43,7 +43,8 @@ public class MyApp implements SparkApplication {
 		
 		get("/subscription/create", (request, response) -> {
 			logger.info("----- Request -----");
-			logger.info(new Gson().toJson(request));
+			logger.info(request.uri());
+			logger.info(request.url());
 			return new String("test");
 		});
 		
