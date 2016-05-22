@@ -40,7 +40,7 @@ public class MyApp implements SparkApplication {
 
 	private void initSubscriptionApis() {
 		
-		get("/subscription/create/:event", (request, response) -> {
+		get("/subscription/create", (request, response) -> {
 			logRequest(request);
 			return new String("test");
 		});
