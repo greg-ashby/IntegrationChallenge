@@ -40,7 +40,7 @@ public class MyApp implements SparkApplication {
 
 	private void initSubscriptionApis() {
 		
-		get("/subscription/create/:eventId", (request, response) -> {
+		get("/subscription/create", (request, response) -> {
 			logRequest(request);
 			return new String("test");
 		});
@@ -62,6 +62,7 @@ public class MyApp implements SparkApplication {
 		logger.info("SCHEME: {}", request.scheme());
 		logger.info("URI: {}", request.uri());
 		logger.info("URL: {}", request.url());
+		logger.info("EVENT_URL: {}", request.queryParams("eventUrl"));
 		
 	}
 
