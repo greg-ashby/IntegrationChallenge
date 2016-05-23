@@ -56,7 +56,7 @@ public class MyApp implements SparkApplication {
 			String eventUrl = request.queryParams("eventUrl");
 			String testConsumerKey = "ashbyintegrationchallenge-117319";
 			
-			MyOAuthConsumer consumer = new MyOAuthConsumer(testConsumerKey, "PlBGF8t9U6m6303z");
+			MyOAuthConsumer consumer = new MyOAuthConsumer(testConsumerKey, "PlBGF8t9U6m6303");
 			URL url = new URL(eventUrl);
 			HttpURLConnection outgoingRequest = (HttpURLConnection) url.openConnection();
 			consumer.sign(outgoingRequest);
