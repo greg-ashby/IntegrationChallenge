@@ -4,6 +4,8 @@ import static spark.Spark.before;
 import static spark.Spark.exception;
 import static spark.Spark.get;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
@@ -50,13 +52,13 @@ public class MyApp implements SparkApplication {
 
 		get("/subscription/create", (request, response) -> {
 
-			//verify AppDirect call
-			//make call back to App Direct
-			
+			// verify AppDirect call
+			// make call back to App Direct
+
 			String eventUrl = request.queryParams("eventUrl");
 			String testConsumerKey = "ashbyintegrationchallenge-117319";
-			
-			MyOAuthConsumer consumer = new MyOAuthConsumer(testConsumerKey, "PlBGF8t9U6m6303");
+
+			MyOAuthConsumer consumer = new MyOAuthConsumer(testConsumerKey, "PlBGF8t9U6m6303z");
 			URL url = new URL(eventUrl);
 			HttpURLConnection outgoingRequest = (HttpURLConnection) url.openConnection();
 			consumer.sign(outgoingRequest);
@@ -64,8 +66,11 @@ public class MyApp implements SparkApplication {
 			outgoingRequest.connect();
 			System.out.println(outgoingRequest.getResponseCode());
 			System.out.println("sent the request");
-			
-			logger.info(outgoingRequest.getResponseMessage());
+
+			BufferedReader in = new BufferedReader(new InputStreamReader(outgoingRequest.getInputStream()));
+			String inputLine;
+			while ((inputLine = in.readLine()) != null)
+				System.out.println(inputLine);
 			return "yup";
 		});
 
