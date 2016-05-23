@@ -64,6 +64,8 @@ public class MyApp implements SparkApplication {
 			outgoingRequest.connect();
 			System.out.println(outgoingRequest.getResponseCode());
 			System.out.println("sent the request");
+			
+			logger.info(outgoingRequest.getResponseMessage());
 			return "yup";
 		});
 
