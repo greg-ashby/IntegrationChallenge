@@ -1,7 +1,11 @@
 package com.gregashby.challenge;
 
+import static spark.Spark.before;
 import static spark.Spark.exception;
 import static spark.Spark.get;
+
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,11 +32,15 @@ public class MyApp implements SparkApplication {
 	 */
 	public void init() {
 
+		before((request, response) -> {
+			logRequest(request);
+		});
 		initSubscriptionApis();
 
 		get("/*", (request, response) -> "Welcome to my app", new JsonTransformer());
 
 		exception(Exception.class, (exception, request, response) -> {
+			exception.printStackTrace(System.out);
 			response.body("whoops, something bad happened");
 		});
 
@@ -41,13 +49,27 @@ public class MyApp implements SparkApplication {
 	private void initSubscriptionApis() {
 
 		get("/subscription/create", (request, response) -> {
-			logRequest(request);
-			return new String("test");
+
+			//verify AppDirect call
+			//make call back to App Direct
+			
+			String eventUrl = request.queryParams("eventUrl");
+			String testConsumerKey = "ashbyintegrationchallenge-117319";
+			
+			MyOAuthConsumer consumer = new MyOAuthConsumer(testConsumerKey, "PlBGF8t9U6m6303z");
+			URL url = new URL(eventUrl);
+			HttpURLConnection outgoingRequest = (HttpURLConnection) url.openConnection();
+			consumer.sign(outgoingRequest);
+			System.out.println(consumer.getAuthHeader());
+			outgoingRequest.connect();
+			System.out.println(outgoingRequest.getResponseCode());
+			System.out.println("sent the request");
+			return "yup";
 		});
 
 	}
 
-	private void logRequest(Request request){
+	private void logRequest(Request request) {
 		logger.info("----- NEW REQUEST -----");
 		logger.info("BODY: {}", request.body());
 		logger.info("ATTRIBUTES: {}", request.attributes().toString());
@@ -63,9 +85,8 @@ public class MyApp implements SparkApplication {
 		logger.info("URI: {}", request.uri());
 		logger.info("URL: {}", request.url());
 		logger.info("EVENT_URL: {}", request.queryParams("eventUrl"));
-		request.headers().stream()
-			.forEach(name -> logger.info("{} = {}", name, request.headers(name)));
-		
+		request.headers().stream().forEach(name -> logger.info("{} = {}", name, request.headers(name)));
+
 	}
 
 }
