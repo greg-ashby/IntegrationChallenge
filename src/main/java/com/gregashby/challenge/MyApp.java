@@ -61,6 +61,9 @@ public class MyApp implements SparkApplication {
 			MyOAuthConsumer consumer = new MyOAuthConsumer(testConsumerKey, "PlBGF8t9U6m6303z");
 			URL url = new URL(eventUrl);
 			HttpURLConnection outgoingRequest = (HttpURLConnection) url.openConnection();
+			outgoingRequest.setRequestProperty("Content-Type", "application/json");
+			outgoingRequest.setRequestProperty("Accept", "application/json");
+			
 			consumer.sign(outgoingRequest);
 			System.out.println(consumer.getAuthHeader());
 			outgoingRequest.connect();
