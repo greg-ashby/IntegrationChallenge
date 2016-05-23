@@ -13,6 +13,8 @@ import java.net.URL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.Gson;
+
 import spark.Request;
 import spark.Response;
 import spark.servlet.SparkApplication;
@@ -98,10 +100,18 @@ public class MyApp implements SparkApplication {
 			logger.info("Request sent! Response code is {}", outgoingRequest.getResponseCode());
 			
 			BufferedReader in = new BufferedReader(new InputStreamReader(outgoingRequest.getInputStream()));
-			String inputLine;
-			while ((inputLine = in.readLine()) != null)
-				System.out.println(inputLine);
-			return "yup";
+			String inputLine = null;
+			StringBuffer sb = new StringBuffer();
+			while ((inputLine = in.readLine()) != null){
+				sb.append(inputLine);
+			}
+			String json = sb.toString();
+			
+			Gson gson = new Gson();
+			AppDirectResponse result = gson.fromJson(json, AppDirectResponse.class);
+			logger.info(result.getType());
+			
+			return "";
 		});
 
 	}
