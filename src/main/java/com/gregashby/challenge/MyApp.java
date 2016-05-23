@@ -3,6 +3,7 @@ package com.gregashby.challenge;
 import static spark.Spark.before;
 import static spark.Spark.exception;
 import static spark.Spark.get;
+import static spark.Spark.halt;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -13,10 +14,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import spark.Request;
+import spark.Response;
 import spark.servlet.SparkApplication;
 
 public class MyApp implements SparkApplication {
 
+	private static final String ENV_CONSUMER_SECRET = "consumer-secret";
+	private static final String ENV_CONSUMER_KEY = "consumer-key";
+	private static final String PARAM_EVENT_URL = "eventUrl";
+	private static final String ENV_API_DOMAIN = "api-domain";
 	private static Logger logger = LoggerFactory.getLogger("default");
 
 	/**
@@ -34,8 +40,8 @@ public class MyApp implements SparkApplication {
 	 */
 	public void init() {
 
-		before((request, response) -> {
-			logRequest(request);
+		before("/subscription/*", (request, response) -> {
+			verifyOAuthRequest(request, response);
 		});
 		initSubscriptionApis();
 
@@ -48,28 +54,49 @@ public class MyApp implements SparkApplication {
 
 	}
 
+	private void verifyOAuthRequest(Request request, Response response) {
+		
+		boolean isValidOAuth = false;
+		boolean isValidTimestamp = false;
+		boolean isValidEventUrl = false;
+		
+		// TODO Implement oauth verification
+		isValidOAuth = true;
+		
+		// TODO make sure timestamp is < 10 seconds old to prevent playbacks
+		isValidTimestamp = true;
+		
+		// make sure domain of the eventUrl is expected as an extra security check
+		String apiDomain = System.getenv(ENV_API_DOMAIN);
+		String eventUrl = request.queryParams(PARAM_EVENT_URL);
+		if(eventUrl != null && eventUrl.startsWith(apiDomain)){
+			isValidEventUrl = true;
+		}
+		
+		if(!(isValidEventUrl && isValidOAuth && isValidTimestamp)){
+			halt(401, "Unauthorized request");
+		}
+	}
+
 	private void initSubscriptionApis() {
 
 		get("/subscription/create", (request, response) -> {
 
-			// verify AppDirect call
-			// make call back to App Direct
+			
+			String eventUrl = request.queryParams(PARAM_EVENT_URL);
+			String consumerKey = System.getenv(ENV_CONSUMER_KEY);
+			String consumerSecret = System.getenv(ENV_CONSUMER_SECRET);
 
-			String eventUrl = request.queryParams("eventUrl");
-			String testConsumerKey = "ashbyintegrationchallenge-117319";
-
-			MyOAuthConsumer consumer = new MyOAuthConsumer(testConsumerKey, "PlBGF8t9U6m6303z");
 			URL url = new URL(eventUrl);
 			HttpURLConnection outgoingRequest = (HttpURLConnection) url.openConnection();
 			outgoingRequest.setRequestProperty("Content-Type", "application/json");
 			outgoingRequest.setRequestProperty("Accept", "application/json");
 			
+			MyOAuthConsumer consumer = new MyOAuthConsumer(consumerKey, consumerSecret);
 			consumer.sign(outgoingRequest);
-			System.out.println(consumer.getAuthHeader());
 			outgoingRequest.connect();
-			System.out.println(outgoingRequest.getResponseCode());
-			System.out.println("sent the request");
-
+			logger.info("Request sent! Response code is {}", outgoingRequest.getResponseCode());
+			
 			BufferedReader in = new BufferedReader(new InputStreamReader(outgoingRequest.getInputStream()));
 			String inputLine;
 			while ((inputLine = in.readLine()) != null)
@@ -94,7 +121,7 @@ public class MyApp implements SparkApplication {
 		logger.info("SCHEME: {}", request.scheme());
 		logger.info("URI: {}", request.uri());
 		logger.info("URL: {}", request.url());
-		logger.info("EVENT_URL: {}", request.queryParams("eventUrl"));
+		logger.info("EVENT_URL: {}", request.queryParams(PARAM_EVENT_URL));
 		request.headers().stream().forEach(name -> logger.info("{} = {}", name, request.headers(name)));
 
 	}
