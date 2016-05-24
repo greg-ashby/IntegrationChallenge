@@ -1,4 +1,4 @@
-package com.gregashby.challenge;
+package com.gregashby.challenge.json;
 
 import com.google.gson.Gson;
 

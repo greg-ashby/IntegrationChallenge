@@ -1,4 +1,4 @@
-package com.gregashby.challenge;
+package com.gregashby.challenge.oauth;
 
 import java.net.HttpURLConnection;
 

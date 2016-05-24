@@ -14,6 +14,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
+import com.gregashby.challenge.accounts.Account;
+import com.gregashby.challenge.accounts.Accounts;
+import com.gregashby.challenge.json.AppDirectResponse;
+import com.gregashby.challenge.json.JsonTransformer;
+import com.gregashby.challenge.oauth.MyOAuthConsumer;
 
 import spark.Request;
 import spark.Response;
@@ -108,10 +113,12 @@ public class MyApp implements SparkApplication {
 			String json = sb.toString();
 			
 			Gson gson = new Gson();
-			AppDirectResponse result = gson.fromJson(json, AppDirectResponse.class);
-			logger.info(result.getType());
+			AppDirectResponse appDirectResponse = gson.fromJson(json, AppDirectResponse.class);
+			Account parsedResponse = new Account(appDirectResponse);
+			Account createdAccount = Accounts.createAccount(parsedResponse.getUserId(), parsedResponse.getCompanyId());
 			
-			return "";
+			logger.info("SUCCESS - CREATED: {}", createdAccount.getId());
+			return createdAccount;
 		});
 
 	}
