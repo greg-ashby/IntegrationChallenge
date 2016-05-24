@@ -25,7 +25,7 @@ public class Accounts {
 			int maxId = -1;
 			synchronized (createAccountLock) {
 				ResultSet result = maxIdStatement.executeQuery();
-				result.first();
+				result.next();
 				maxId = result.getInt(1) + 1;
 
 				insertStatement.setInt(1, maxId);
