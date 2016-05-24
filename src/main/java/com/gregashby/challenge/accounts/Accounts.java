@@ -53,19 +53,14 @@ public class Accounts {
 			selectStatement.setInt(1, id);
 
 			ResultSet result = selectStatement.executeQuery();
-			result.first();
-			if (!result.isLast()) {
-				if(result.next()){
-					throw new Exception("Somehow got more than 1 record, unexpected error");	
-				}
-				return null;
+			if(result.next()){
+				Account account = new Account();
+				account.setId(result.getInt("id"));
+				account.setUserId(result.getString("userId"));
+				account.setCompanyId(result.getString("companyId"));
+				return account;
 			}
-			
-			Account account = new Account();
-			account.setId(result.getInt("id"));
-			account.setUserId(result.getString("userId"));
-			account.setCompanyId(result.getString("companyId"));
-			return account;
+			return null;
 
 		}
 	}
