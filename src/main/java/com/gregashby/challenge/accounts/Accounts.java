@@ -11,7 +11,7 @@ public class Accounts {
 	private static final String JDBC_DATABASE_URL = "JDBC_DATABASE_URL";
 	private static Object createAccountLock = new Object();
 
-	public static Account createAccount(String email, String companyId) throws Exception {
+	public static Account createAccount(String userId, String companyId) throws Exception {
 
 		Account account = new Account();
 
@@ -29,7 +29,7 @@ public class Accounts {
 				maxId = result.getInt(1) + 1;
 
 				insertStatement.setInt(1, maxId);
-				insertStatement.setString(2, email);
+				insertStatement.setString(2, userId);
 				insertStatement.setString(3, companyId);
 
 				int rowsAffected = insertStatement.executeUpdate();
@@ -40,7 +40,7 @@ public class Accounts {
 			account.setId(maxId);
 		}
 
-		account.setUserId(email);
+		account.setUserId(userId);
 		account.setCompanyId(companyId);
 		return account;
 	}
@@ -63,19 +63,19 @@ public class Accounts {
 			
 			Account account = new Account();
 			account.setId(result.getInt("id"));
-			account.setUserId(result.getString("email"));
+			account.setUserId(result.getString("userId"));
 			account.setCompanyId(result.getString("companyId"));
 			return account;
 
 		}
 	}
 
-	public static void deleteAccount(String email) throws Exception {
+	public static void deleteAccount(String userId) throws Exception {
 		try (Connection connection = DriverManager.getConnection(System.getenv(JDBC_DATABASE_URL))) {
 
-			String deleteSql = "DELETE FROM accounts WHERE email=?";
+			String deleteSql = "DELETE FROM accounts WHERE userId=?";
 			PreparedStatement deleteStatement = connection.prepareStatement(deleteSql);
-			deleteStatement.setString(1, email);
+			deleteStatement.setString(1, userId);
 
 			int rowsAffected = deleteStatement.executeUpdate();
 			if (rowsAffected != 1) {

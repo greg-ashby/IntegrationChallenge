@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import com.google.gson.Gson;
 import com.gregashby.challenge.accounts.Account;
 import com.gregashby.challenge.accounts.Accounts;
+import com.gregashby.challenge.db.DbInitializer;
 import com.gregashby.challenge.json.AppDirectResponse;
 import com.gregashby.challenge.json.JsonTransformer;
 import com.gregashby.challenge.oauth.MyOAuthConsumer;
@@ -51,6 +52,7 @@ public class MyApp implements SparkApplication {
 			verifyOAuthRequest(request, response);
 		});
 		initSubscriptionApis();
+		initDbApis();
 
 		get("/*", (request, response) -> "Welcome to my app", new JsonTransformer());
 
@@ -61,26 +63,42 @@ public class MyApp implements SparkApplication {
 
 	}
 
-	private void verifyOAuthRequest(Request request, Response response) {
+	private void initDbApis() {
+
 		
+		get("/db/drop", (request, response) -> {
+			DbInitializer.dropTables();
+			return "dropped all tables";
+		});
+		
+		get("/db/create", (request, response) -> {
+			DbInitializer.createTables();
+			return "created all tables";
+		});
+
+	}
+
+	private void verifyOAuthRequest(Request request, Response response) {
+
 		boolean isValidOAuth = false;
 		boolean isValidTimestamp = false;
 		boolean isValidEventUrl = false;
-		
+
 		// TODO Implement oauth verification
 		isValidOAuth = true;
-		
+
 		// TODO make sure timestamp is < 10 seconds old to prevent playbacks
 		isValidTimestamp = true;
-		
-		// make sure domain of the eventUrl is expected as an extra security check
+
+		// make sure domain of the eventUrl is expected as an extra security
+		// check
 		String apiDomain = System.getenv(ENV_API_DOMAIN);
 		String eventUrl = request.queryParams(PARAM_EVENT_URL);
-		if(eventUrl != null && eventUrl.startsWith(apiDomain)){
+		if (eventUrl != null && eventUrl.startsWith(apiDomain)) {
 			isValidEventUrl = true;
 		}
-		
-		if(!(isValidEventUrl && isValidOAuth && isValidTimestamp)){
+
+		if (!(isValidEventUrl && isValidOAuth && isValidTimestamp)) {
 			halt(401, "Unauthorized request");
 		}
 	}
@@ -89,7 +107,6 @@ public class MyApp implements SparkApplication {
 
 		get("/subscription/create", (request, response) -> {
 
-			
 			String eventUrl = request.queryParams(PARAM_EVENT_URL);
 			String consumerKey = System.getenv(ENV_CONSUMER_KEY);
 			String consumerSecret = System.getenv(ENV_CONSUMER_SECRET);
@@ -98,25 +115,25 @@ public class MyApp implements SparkApplication {
 			HttpURLConnection outgoingRequest = (HttpURLConnection) url.openConnection();
 			outgoingRequest.setRequestProperty("Content-Type", "application/json");
 			outgoingRequest.setRequestProperty("Accept", "application/json");
-			
+
 			MyOAuthConsumer consumer = new MyOAuthConsumer(consumerKey, consumerSecret);
 			consumer.sign(outgoingRequest);
 			outgoingRequest.connect();
 			logger.info("Request sent! Response code is {}", outgoingRequest.getResponseCode());
-			
+
 			BufferedReader in = new BufferedReader(new InputStreamReader(outgoingRequest.getInputStream()));
 			String inputLine = null;
 			StringBuffer sb = new StringBuffer();
-			while ((inputLine = in.readLine()) != null){
+			while ((inputLine = in.readLine()) != null) {
 				sb.append(inputLine);
 			}
 			String json = sb.toString();
-			
+
 			Gson gson = new Gson();
 			AppDirectResponse appDirectResponse = gson.fromJson(json, AppDirectResponse.class);
 			Account parsedResponse = new Account(appDirectResponse);
 			Account createdAccount = Accounts.createAccount(parsedResponse.getUserId(), parsedResponse.getCompanyId());
-			
+
 			logger.info("SUCCESS - CREATED: {}", createdAccount.getId());
 			return createdAccount;
 		});
