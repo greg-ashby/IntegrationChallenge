@@ -5,7 +5,6 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 import com.google.gson.Gson;
-import com.gregashby.challenge.json.AppDirectResponse;
 
 public class AppDirectResponseTest {
 
@@ -25,7 +24,6 @@ public class AppDirectResponseTest {
 				+ "'returnUrl':null,'links':[]}";
 
 		Gson gson = new Gson();
-
 		AppDirectResponse result = gson.fromJson(json, AppDirectResponse.class);
 
 		assertEquals("SUBSCRIPTION_ORDER", result.getType());
