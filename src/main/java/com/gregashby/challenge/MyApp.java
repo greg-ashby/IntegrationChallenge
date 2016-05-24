@@ -1,5 +1,6 @@
 package com.gregashby.challenge;
 
+import static spark.Spark.after;
 import static spark.Spark.before;
 import static spark.Spark.exception;
 import static spark.Spark.get;
@@ -53,8 +54,27 @@ public class MyApp implements SparkApplication {
 		before("/subscription/*", (request, response) -> {
 			verifyOAuthRequest(request, response);
 		});
+
+		after("/subscription/*", (request, response) -> {
+			response.type("application/json");
+		});
+		
+		after("/test", (request, response) -> {
+			response.type("application/json");
+		});
+
 		initSubscriptionApis();
 		initDbApis();
+
+		get("/test", (request, response) -> {
+			Map<String, Object> map = new LinkedHashMap<>();
+			map.put("success", "true");
+			map.put("accountIdentifier", "123");
+
+			logger.info("Returning - {}", new JsonTransformer().render(map));
+			return map;
+
+		}, new JsonTransformer());
 
 		get("/*", (request, response) -> "Welcome to my app", new JsonTransformer());
 
@@ -67,12 +87,11 @@ public class MyApp implements SparkApplication {
 
 	private void initDbApis() {
 
-		
 		get("/db/drop", (request, response) -> {
 			DbInitializer.dropTables();
 			return "dropped all tables";
 		});
-		
+
 		get("/db/create", (request, response) -> {
 			DbInitializer.createTables();
 			return "created all tables";
@@ -137,11 +156,11 @@ public class MyApp implements SparkApplication {
 			Account createdAccount = Accounts.createAccount(parsedResponse.getUserId(), parsedResponse.getCompanyId());
 
 			logger.info("SUCCESS - CREATED: {}", createdAccount.getId());
-			
+
 			Map<String, Object> map = new LinkedHashMap<>();
 			map.put("success", "true");
 			map.put("accountIdentifier", String.valueOf(createdAccount.getId()));
-			
+
 			logger.info("Returning - {}", new JsonTransformer().render(map));
 			return map;
 		}, new JsonTransformer());
