@@ -234,6 +234,10 @@ public class MyApp implements SparkApplication, AppDirectConstants {
 		}
 
 		AppDirectResponse json = parseResponse(signedFetch);
+		if(FLAG_STATELESS.equals(json.getFlag())){
+			return createSuccessResult();
+		}
+		
 		String userIdToChange = json.getPayload().getAccount().getAccountIdentifier();
 		
 		try {
@@ -280,6 +284,10 @@ public class MyApp implements SparkApplication, AppDirectConstants {
 		}
 
 		AppDirectResponse json = parseResponse(signedFetch);
+		if(FLAG_STATELESS.equals(json.getFlag())){
+			return createSuccessResult();
+		}
+		
 		String userIdToCancel = json.getPayload().getAccount().getAccountIdentifier();
 
 		try {
@@ -323,6 +331,10 @@ public class MyApp implements SparkApplication, AppDirectConstants {
 		}
 
 		AppDirectResponse json = parseResponse(signedFetch);
+		if(FLAG_STATELESS.equals(json.getFlag())){
+			return createSuccessResult();
+		}
+		
 		Account account = new Account();
 		account.setEmail(json.getCreator().getEmail());
 		account.setCompanyId(json.getPayload().getCompany().getUuid());
