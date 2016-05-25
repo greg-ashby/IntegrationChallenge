@@ -43,7 +43,7 @@ import spark.template.freemarker.FreeMarkerEngine;
  * @author gregashby
  *
  */
-public class MyApp implements SparkApplication {
+public class MyApp implements SparkApplication, AppDirectConstants {
 
 	/**
 	 * TODO Refactor this as: - separate routes class that describes all the
@@ -225,12 +225,12 @@ public class MyApp implements SparkApplication {
 		});
 	}
 
-	private Object handleChangeSubscription(Request request) throws MalformedURLException, OAuthMessageSignerException, OAuthExpectationFailedException, OAuthCommunicationException, IOException {
+	private Object handleChangeSubscription(Request request) throws Exception {
 		HttpURLConnection signedFetch = performSignedFetch(request);
 		int responseCode = signedFetch.getResponseCode();
 		if (responseCode != 200) {
 			// TODO understand and handle error conditions better
-			return createErrorResult("UNKNOWN_ERROR", "An unknown error occurred");
+			return createErrorResult(ERROR_UNKNOWN, "An unknown error occurred");
 		}
 
 		AppDirectResponse json = parseResponse(signedFetch);
@@ -245,15 +245,16 @@ public class MyApp implements SparkApplication {
 		} catch (AccountNotFoundException anfe) {
 			logger.info("ERROR - Unable to change account");
 			anfe.printStackTrace(System.out);
-			return createErrorResult("ACCOUNT_NOT_CHANGED", "Could not find the account");
+			return createErrorResult(ERROR_ACCOUNT_NOT_FOUND, "Could not find the account");
 		} catch (Exception e) {
 			logger.info("ERROR - Unable to cancel account");
 			e.printStackTrace(System.out);
-			return createErrorResult("ACCOUNT_NOT_CHANGED", "Could not change account: " + e.getMessage());
+			return createErrorResult(ERROR_UNKNOWN, "Could not change account: " + e.getMessage());
 		}
 
 		logger.info("SUCCESS - CHANGED SUBSCRIPTION# {}", userIdToChange);
 		Map<String, String> result = createSuccessResult();
+		logger.info(new JsonTransformer().render(result));
 		return result;
 
 	}
@@ -275,7 +276,7 @@ public class MyApp implements SparkApplication {
 		int responseCode = signedFetch.getResponseCode();
 		if (responseCode != 200) {
 			// TODO understand and handle error conditions better
-			return createErrorResult("UNKNOWN_ERROR", "An unknown error occurred");
+			return createErrorResult(ERROR_UNKNOWN, "An unknown error occurred");
 		}
 
 		AppDirectResponse json = parseResponse(signedFetch);
@@ -287,11 +288,11 @@ public class MyApp implements SparkApplication {
 		} catch (AccountNotFoundException anfe) {
 			logger.info("ERROR - Unable to cancel account");
 			anfe.printStackTrace(System.out);
-			return createErrorResult("ACCOUNT_NOT_CANCELLED", "Could not find the account");
+			return createErrorResult(ERROR_ACCOUNT_NOT_FOUND, "Could not find the account");
 		} catch (Exception e) {
 			logger.info("ERROR - Unable to cancel account");
 			e.printStackTrace(System.out);
-			return createErrorResult("ACCOUNT_NOT_CANCELLED", "Could not cancel account: " + e.getMessage());
+			return createErrorResult(ERROR_UNKNOWN, "Could not cancel account: " + e.getMessage());
 		}
 
 		logger.info("SUCCESS - CANCELED SUBSCRIPTION# {}", userIdToCancel);
@@ -318,7 +319,7 @@ public class MyApp implements SparkApplication {
 		int responseCode = signedFetch.getResponseCode();
 		if (responseCode != 200) {
 			// TODO understand and handle error conditions better
-			return createErrorResult("UNKNOWN_ERROR", "An unknown error occurred");
+			return createErrorResult(ERROR_UNKNOWN, "An unknown error occurred");
 		}
 
 		AppDirectResponse json = parseResponse(signedFetch);
@@ -337,12 +338,12 @@ public class MyApp implements SparkApplication {
 		} catch (Exception e) {
 			logger.info("ERROR - Unable to create account");
 			e.printStackTrace(System.out);
-			return createErrorResult("ACCOUNT_NOT_CREATED", "Could not create account: " + e.getMessage());
+			return createErrorResult(ERROR_UNKNOWN, "Could not create account: " + e.getMessage());
 		}
 
 		logger.info("SUCCESS - Created account# {}", account.getId());
 		Map<String, String> result = createSuccessResult();
-		result.put("accountIdentifier", String.valueOf(account.getId()));
+		result.put("accountIdentifier", account.getId());
 		logger.info(new JsonTransformer().render(result));
 		return result;
 	}
