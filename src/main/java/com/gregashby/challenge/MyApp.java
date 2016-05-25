@@ -91,6 +91,7 @@ public class MyApp implements SparkApplication, AppDirectConstants {
 		initSubscriptionEndPoints();
 		initViewRoutes();
 		initSecureRoute();
+		initLoginRoute();
 		initExceptionHandler();
 
 		// NOTE: this needs to be called last as a catch-all route of '/*'
@@ -99,37 +100,42 @@ public class MyApp implements SparkApplication, AppDirectConstants {
 		initBaseRoute();
 	}
 
-	private void initSecureRoute() {
-
+	private void initLoginRoute() {
 		openIdManager = new ConsumerManager(); // TODO verify this is
-												// threadsafe since its shared
-												// for all requests
+		// threadsafe since its shared
+		// for all requests
 		openIdManager.setAssociations(new InMemoryConsumerAssociationStore());
 		openIdManager.setNonceVerifier(new InMemoryNonceVerifier(5000));
 		openIdManager.setMinAssocSessEnc(AssociationSessionType.DH_SHA256);
 
-		before("/secured-page", (request, response) -> {
-			
+		get("/login", (request, response) -> {
 			logger.info("authenticating with openid");
-			
+
 			if ("true".equals(request.params("is_return"))) {
 				logger.info("authenticating the return");
 				processOpenIdAuthenticationReturn(request, response);
 			} else {
 				logger.info("confirming openid identifier has been provided");
-				String identifier = request.queryParams("openid_identifier"); //TODO make this smart enough to handle posts too (i.e. check params too)
+				String identifier = request.queryParams("openid_identifier");
 				if (identifier != null) {
 					logger.info("making authentication request");
 					makeOpenIdAuthenticationRequest(identifier, request, response);
-				} 
+				}
 			}
-			
-			if(request.session().attribute("identifier") == null){
+
+			logger.info("done authenticating with openid");
+			return "logged in";
+		});
+		
+	}
+
+	private void initSecureRoute() {
+
+		before("/secured-page", (request, response) -> {
+			if (request.session().attribute("identifier") == null) {
 				logger.info("unauthorized");
 				halt(401, "you are not authorized");
 			}
-			
-			logger.info("done authenticating with openid");
 		});
 
 		get("/secured-page", (request, response) -> {
@@ -143,14 +149,15 @@ public class MyApp implements SparkApplication, AppDirectConstants {
 		String returnUrl = request.url() + "?is_return=true";
 		List discoveries = openIdManager.discover(identifier);
 		DiscoveryInformation discovered = openIdManager.associate(discoveries);
-		request.session().attribute("openid-disc", discovered);//TODO is this needed???
+		request.session().attribute("openid-disc", discovered);// TODO is this
+																// needed???
 		AuthRequest authenticationRequest = openIdManager.authenticate(discovered, returnUrl);
 		response.redirect(authenticationRequest.getDestinationUrl(true));
 	}
 
 	private void processOpenIdAuthenticationReturn(Request request, Response response) {
 		Identifier identifier = verifyOpenIdResponse(request);
-		if(identifier != null){
+		if (identifier != null) {
 			request.session().attribute("identifier", identifier);
 		}
 	}
