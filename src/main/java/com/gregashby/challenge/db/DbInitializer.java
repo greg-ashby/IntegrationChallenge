@@ -6,7 +6,7 @@ import java.sql.SQLException;
 
 public class DbInitializer {
 
-	private static final String[] CREATE_STATEMENTS = { "create table accounts (id int not null unique, userId varchar(255) not null unique, companyId varchar(255))" };
+	private static final String[] CREATE_STATEMENTS = { "create table accounts (id int not null unique, userId varchar(255) not null unique, companyId varchar(255), editionCode varchar(255), status varchar(255))" };
 	private static final String[] DROP_STATEMENTS = { "drop table accounts" };
 
 	static{

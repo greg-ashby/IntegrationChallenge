@@ -130,20 +130,27 @@ public class MyApp implements SparkApplication {
 				return createError("UNKNOWN_ERROR", "An unknown error occurred");
 			}
 
-			Account parsedResponse = parseResponse(signedFetch);
-
-			Account createdAccount = null;
+			AppDirectResponse json = parseResponse(signedFetch);
+			Account account = new Account();
+			account.setEmail(json.getCreator().getEmail());
+			account.setCompanyId(json.getPayload().getCompany().getUuid());
+			account.setEditionCode(json.getPayload().getOrder().getEditionCode());
+			account.setStatus("FREE_TRIAL");
+			
 			try {
-				createdAccount = Accounts.createAccount(parsedResponse.getUserId(), parsedResponse.getCompanyId());
+				Accounts.createAccount(account);
+				if(account.getId() < 1){
+					throw new Exception("Did not get an error but could not create an account.");
+				}
 			} catch (Exception e) {
 				logger.info("ERROR - Unable to create account");
 				e.printStackTrace(System.out);
 				return createError("ACCOUNT_NOT_CREATED", "Could not create account: " + e.getMessage());
 			}
 
-			logger.info("SUCCESS - CREATED ACCOUNT# {}", createdAccount.getId());
+			logger.info("SUCCESS - Created account# {}", account.getId());
 			Map<String, String> result = createSuccess();
-			result.put("accountIdentifer", String.valueOf(createdAccount.getId()));
+			result.put("accountIdentifer", String.valueOf(account.getId()));
 			return result;
 		}, new JsonTransformer());
 
@@ -155,9 +162,9 @@ public class MyApp implements SparkApplication {
 				// TODO understand and handle error conditions better
 				return createError("UNKNOWN_ERROR", "An unknown error occurred");
 			}
-			Account parsedResponse = parseResponse(signedFetch);
-
-			String userIdToCancel = parsedResponse.getUserId();
+			
+			AppDirectResponse json = parseResponse(signedFetch);
+			String userIdToCancel = json.getPayload().getAccount().getAccountIdentifier();
 
 			try {
 				Accounts.deleteAccount(userIdToCancel);
@@ -179,12 +186,12 @@ public class MyApp implements SparkApplication {
 		return map;
 	}
 
-	private Account parseResponse(HttpURLConnection signedFetch) throws IOException {
+	private AppDirectResponse parseResponse(HttpURLConnection signedFetch) throws IOException {
 		String json = extractJson(signedFetch);
+		logger.info(json);
 		Gson gson = new Gson();
 		AppDirectResponse appDirectResponse = gson.fromJson(json, AppDirectResponse.class);
-		Account parsedResponse = new Account(appDirectResponse);
-		return parsedResponse;
+		return appDirectResponse;
 	}
 
 	private String extractJson(HttpURLConnection signedFetch) throws IOException {

@@ -30,6 +30,7 @@ public class AppDirectResponseTest {
 		assertEquals("ashbygreg-test", result.getMarketplace().getPartner());
 		assertEquals("30c741dd-2ce1-469b-86cf-ea8bf715556f", result.getPayload().getCompany().getUuid());
 		assertEquals("ashbygreg@gmail.com", result.getCreator().getEmail());
+		assertEquals("BASIC", result.getPayload().getOrder().getEditionCode());
 	}
 	
 

@@ -11,11 +11,19 @@ public class AccountsTest {
 
 	private static final String TEST_COMPANY_ID = "12345f";
 	private static final String TEST_EMAIL = "test@test.com";
+	private static final String TEST_EDITION = "BASIC";
+	private static final String TEST_STATUS = "FREE_TRIAL";
 
 	@Test
 	public void testCreateAccount() throws Exception {
 
-		Account account = Accounts.createAccount(TEST_EMAIL, TEST_COMPANY_ID);
+		Account account = new Account();
+		account.setEmail(TEST_EMAIL);
+		account.setCompanyId(TEST_COMPANY_ID);
+		account.setEditionCode(TEST_EDITION);
+		account.setStatus(TEST_STATUS);
+		
+		Accounts.createAccount(account);
 		assertTrue(account.getId() > 0);
 		Account accountFetched = Accounts.fetchAccount(account.getId());
 		assertEquals(account, accountFetched);

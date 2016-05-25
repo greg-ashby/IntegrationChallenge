@@ -1,27 +1,38 @@
 package com.gregashby.challenge.accounts;
 
-import com.gregashby.challenge.json.AppDirectResponse;
-
 public class Account {
 
 	private int id = -1;
-	private String userId = null;
+	private String email = null;
 	private String companyId = null;
+	private String editionCode = null;
+	private String status = null;
 
-	public Account(AppDirectResponse response) {
-		setUserId(response.getCreator().getEmail());
-		setCompanyId(response.getPayload().getCompany().getUuid());
+	public String getEditionCode() {
+		return editionCode;
+	}
+
+	public void setEditionCode(String editionCode) {
+		this.editionCode = editionCode;
+	}
+
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
 	}
 
 	public Account() {
 	}
 
-	public String getUserId() {
-		return userId;
+	public String getEmail() {
+		return email;
 	}
 
-	public void setUserId(String userId) {
-		this.userId = userId;
+	public void setEmail(String email) {
+		this.email = email;
 	}
 
 	public String getCompanyId() {
@@ -45,9 +56,13 @@ public class Account {
 		if (obj.getClass() == Account.class) {
 			Account account = (Account) obj;
 			if (id == account.getId()) {
-				if (userId.equals(account.getUserId())) {
+				if (email.equals(account.getEmail())) {
 					if (companyId.equals(account.getCompanyId())) {
-						return true;
+						if(editionCode.equals(account.getEditionCode())){
+							if(status.equals(account.getStatus())){
+								return true;
+							}
+						}
 					}
 				}
 			}

@@ -7,17 +7,15 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class Accounts {
-
+	
 	private static final String JDBC_DATABASE_URL = "JDBC_DATABASE_URL";
 	private static Object createAccountLock = new Object();
 
-	public static Account createAccount(String userId, String companyId) throws Exception {
-
-		Account account = new Account();
+	public static void createAccount(Account account) throws Exception {
 
 		try (Connection connection = DriverManager.getConnection(System.getenv(JDBC_DATABASE_URL))) {
 
-			String insertSql = "INSERT INTO accounts VALUES (?, ?, ?)";
+			String insertSql = "INSERT INTO accounts VALUES (?, ?, ?, ?, ?)";
 			String maxIdSql = "SELECT MAX(id) FROM accounts";
 			PreparedStatement insertStatement = connection.prepareStatement(insertSql);
 			PreparedStatement maxIdStatement = connection.prepareStatement(maxIdSql);
@@ -29,9 +27,11 @@ public class Accounts {
 				maxId = result.getInt(1) + 1;
 
 				insertStatement.setInt(1, maxId);
-				insertStatement.setString(2, userId);
-				insertStatement.setString(3, companyId);
-
+				insertStatement.setString(2, account.getEmail());
+				insertStatement.setString(3, account.getCompanyId());
+				insertStatement.setString(4, account.getEditionCode());
+				insertStatement.setString(5, account.getStatus());
+				
 				int rowsAffected = insertStatement.executeUpdate();
 				if (rowsAffected != 1) {
 					throw new Exception("Could not create the account");
@@ -40,9 +40,6 @@ public class Accounts {
 			account.setId(maxId);
 		}
 
-		account.setUserId(userId);
-		account.setCompanyId(companyId);
-		return account;
 	}
 
 	public static Account fetchAccount(int id) throws Exception {
@@ -56,8 +53,10 @@ public class Accounts {
 			if(result.next()){
 				Account account = new Account();
 				account.setId(result.getInt("id"));
-				account.setUserId(result.getString("userId"));
+				account.setEmail(result.getString("userId"));
 				account.setCompanyId(result.getString("companyId"));
+				account.setEditionCode(result.getString("editionCode"));
+				account.setStatus(result.getString("status"));
 				return account;
 			}
 			return null;
@@ -68,7 +67,7 @@ public class Accounts {
 	public static void deleteAccount(String userId) throws Exception {
 		try (Connection connection = DriverManager.getConnection(System.getenv(JDBC_DATABASE_URL))) {
 
-			String deleteSql = "DELETE FROM accounts WHERE userId=?";
+			String deleteSql = "DELETE FROM accounts WHERE id=?";
 			PreparedStatement deleteStatement = connection.prepareStatement(deleteSql);
 			deleteStatement.setString(1, userId);
 
