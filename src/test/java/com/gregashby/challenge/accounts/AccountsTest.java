@@ -63,4 +63,23 @@ public class AccountsTest {
 			assertNotNull(account.getId());
 		});
 	}
+	
+	@Test
+	public void testChangeSubscription() throws Exception{
+		
+		String newStatusCode = "NEW_STATUS";
+		String newEditionCode = "NEW_CODE";
+		String uuid = "178f1f2a-9b02-4e95-b7a8-c2764f94c4e1";
+		
+		Account account = Accounts.fetchAccount(uuid);
+		account.setEditionCode(newEditionCode);
+		account.setStatus(newStatusCode);
+		
+		Accounts.update(account);
+		Account updatedAccount = Accounts.fetchAccount(uuid);
+		
+		assertEquals(newEditionCode, updatedAccount.getEditionCode());
+		assertEquals(newStatusCode, updatedAccount.getStatus());
+		
+	}
 }

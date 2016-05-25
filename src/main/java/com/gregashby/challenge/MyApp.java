@@ -161,7 +161,7 @@ public class MyApp implements SparkApplication {
 			DbInitializer.createTables();
 			return "created all tables";
 		});
-		
+
 		get("/db/insert/:uuid", (request, response) -> {
 			String uuid = request.params("uuid");
 			DbInitializer.createSpecificTestAccount(uuid);
@@ -215,6 +215,43 @@ public class MyApp implements SparkApplication {
 		get("/subscription/cancel", (request, response) -> {
 			return handleCancelSubscription(request);
 		}, new JsonTransformer());
+
+		get("/subscription/change", (request, response) -> {
+			return handleChangeSubscription(request);
+		});
+	}
+
+	private Object handleChangeSubscription(Request request) throws MalformedURLException, OAuthMessageSignerException, OAuthExpectationFailedException, OAuthCommunicationException, IOException {
+		HttpURLConnection signedFetch = performSignedFetch(request);
+		int responseCode = signedFetch.getResponseCode();
+		if (responseCode != 200) {
+			// TODO understand and handle error conditions better
+			return createErrorResult("UNKNOWN_ERROR", "An unknown error occurred");
+		}
+
+		AppDirectResponse json = parseResponse(signedFetch);
+		String userIdToChange = json.getPayload().getAccount().getAccountIdentifier();
+		
+		try {
+			logger.info("About to change account {}", userIdToChange);
+			Account account = Accounts.fetchAccount(userIdToChange);
+			account.setEditionCode(json.getPayload().getOrder().getEditionCode());
+			account.setStatus(json.getPayload().getAccount().getStatus());
+			Accounts.update(account);
+		} catch (AccountNotFoundException anfe) {
+			logger.info("ERROR - Unable to change account");
+			anfe.printStackTrace(System.out);
+			return createErrorResult("ACCOUNT_NOT_CHANGED", "Could not find the account");
+		} catch (Exception e) {
+			logger.info("ERROR - Unable to cancel account");
+			e.printStackTrace(System.out);
+			return createErrorResult("ACCOUNT_NOT_CHANGED", "Could not change account: " + e.getMessage());
+		}
+
+		logger.info("SUCCESS - CHANGED SUBSCRIPTION# {}", userIdToChange);
+		Map<String, String> result = createSuccessResult();
+		return result;
+
 	}
 
 	/**

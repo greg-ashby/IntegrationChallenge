@@ -101,4 +101,24 @@ public class Accounts {
 		return accounts;
 	}
 
+	public static void update(Account account) throws Exception {
+		
+		try (Connection connection = DriverManager.getConnection(System.getenv(JDBC_DATABASE_URL))) {
+
+			String updateSql = "UPDATE accounts SET email=?, companyId=?, editionCode=?, status=? WHERE uuid=?";
+			PreparedStatement updateStatement = connection.prepareStatement(updateSql);
+
+			updateStatement.setString(1, account.getEmail());
+			updateStatement.setString(2, account.getCompanyId());
+			updateStatement.setString(3, account.getEditionCode());
+			updateStatement.setString(4, account.getStatus());
+			updateStatement.setString(5, account.getId());
+			
+			int rowsAffected = updateStatement.executeUpdate();
+			if (rowsAffected == 0) {
+				throw new AccountNotFoundException();
+			}
+		}
+	}
+
 }
