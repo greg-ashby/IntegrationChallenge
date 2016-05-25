@@ -161,6 +161,12 @@ public class MyApp implements SparkApplication {
 			DbInitializer.createTables();
 			return "created all tables";
 		});
+		
+		get("/db/insert/:uuid", (request, response) -> {
+			String uuid = request.params("uuid");
+			DbInitializer.createSpecificTestAccount(uuid);
+			return "created the account";
+		});
 	}
 
 	/**
