@@ -218,11 +218,11 @@ public class MyApp implements SparkApplication, AppDirectConstants {
 
 		get("/subscription/change", (request, response) -> {
 			return handleChangeSubscription(request);
-		});
+		}, new JsonTransformer());
 		
 		get("/subscription/status", (request, response) -> {
 			return handleChangeSubscription(request);
-		});
+		}, new JsonTransformer());
 	}
 
 	private Object handleChangeSubscription(Request request) throws Exception {
