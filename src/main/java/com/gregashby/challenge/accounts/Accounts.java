@@ -17,9 +17,9 @@ public class Accounts {
 
 			String insertSql = "INSERT INTO accounts VALUES (?, ?, ?, ?, ?)";
 			PreparedStatement insertStatement = connection.prepareStatement(insertSql);
-			
+
 			String uuid = UUID.randomUUID().toString();
-		
+
 			insertStatement.setString(1, uuid);
 			insertStatement.setString(2, account.getEmail());
 			insertStatement.setString(3, account.getCompanyId());
@@ -59,31 +59,27 @@ public class Accounts {
 	}
 
 	public static void deleteAccountByEmail(String email) throws Exception {
-		try (Connection connection = DriverManager.getConnection(System.getenv(JDBC_DATABASE_URL))) {
-
-			String deleteSql = "DELETE FROM accounts WHERE email=?";
-			PreparedStatement deleteStatement = connection.prepareStatement(deleteSql);
-			deleteStatement.setString(1, email);
-
-			int rowsAffected = deleteStatement.executeUpdate();
-			if (rowsAffected != 1) {
-				throw new Exception("Could not delete the account");
-			}
-		}
+		String deleteSql = "DELETE FROM accounts WHERE email=?";
+		deleteAccount(deleteSql, email);
 	}
 
-	public static void cancelAccount(String userId) throws Exception {
+	public static void deleteAccountById(String uuid) throws Exception {
+		String deleteSql = "DELETE FROM accounts WHERE uuid=?";
+		deleteAccount(deleteSql, uuid);
+	}
+	
+	private static void deleteAccount(String deleteSql, String key) throws Exception{
 		try (Connection connection = DriverManager.getConnection(System.getenv(JDBC_DATABASE_URL))) {
 
-			String deleteSql = "UPDATE accounts SET status='CANCELLED' WHERE uuid=?";
 			PreparedStatement deleteStatement = connection.prepareStatement(deleteSql);
-			deleteStatement.setString(1, userId);
+			deleteStatement.setString(1, key);
 
 			int rowsAffected = deleteStatement.executeUpdate();
 			if (rowsAffected != 1) {
 				throw new Exception("Could not delete the account");
 			}
 		}
+		
 	}
 
 }

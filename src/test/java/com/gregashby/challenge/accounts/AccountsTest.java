@@ -46,20 +46,4 @@ public class AccountsTest {
 		Account account = Accounts.fetchAccount("9999");
 		assertNull(account);
 	}
-	
-	@Test
-	public void testCancelAccount() throws Exception{
-		Account account = new Account();
-		account.setEmail(TEST_EMAIL);
-		account.setCompanyId(TEST_COMPANY_ID);
-		account.setEditionCode(TEST_EDITION);
-		account.setStatus(TEST_STATUS);
-		
-		Accounts.createAccount(account);
-		
-		Accounts.cancelAccount(account.getId());
-		
-		Account fetched = Accounts.fetchAccount(account.getId());
-		assertEquals("CANCELLED", fetched.getStatus());
-	}
 }
