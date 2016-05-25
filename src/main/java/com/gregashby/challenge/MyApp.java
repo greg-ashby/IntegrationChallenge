@@ -150,7 +150,7 @@ public class MyApp implements SparkApplication {
 
 			logger.info("SUCCESS - Created account# {}", account.getId());
 			Map<String, String> result = createSuccess();
-			result.put("accountIdentifer", String.valueOf(account.getId()));
+			result.put("accountIdentifier", String.valueOf(account.getId()));
 			logger.info(new JsonTransformer().render(result));
 			return result;
 		}, new JsonTransformer());
