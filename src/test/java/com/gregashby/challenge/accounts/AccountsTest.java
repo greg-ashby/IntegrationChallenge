@@ -33,7 +33,7 @@ public class AccountsTest {
 	@After
 	public void tearDown() throws Exception {
 		try {
-			Accounts.deleteAccount(TEST_EMAIL);
+			Accounts.deleteAccount(1);
 		} catch (Exception e) {
 			// assume this test didn't create it and ignore
 		}

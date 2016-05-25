@@ -64,12 +64,12 @@ public class Accounts {
 		}
 	}
 
-	public static void deleteAccount(String userId) throws Exception {
+	public static void deleteAccount(int userId) throws Exception {
 		try (Connection connection = DriverManager.getConnection(System.getenv(JDBC_DATABASE_URL))) {
 
 			String deleteSql = "DELETE FROM accounts WHERE id=?";
 			PreparedStatement deleteStatement = connection.prepareStatement(deleteSql);
-			deleteStatement.setString(1, userId);
+			deleteStatement.setInt(1, userId);
 
 			int rowsAffected = deleteStatement.executeUpdate();
 			if (rowsAffected != 1) {
