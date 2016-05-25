@@ -14,8 +14,19 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
+import org.openid4java.association.AssociationSessionType;
+import org.openid4java.consumer.ConsumerException;
+import org.openid4java.consumer.ConsumerManager;
+import org.openid4java.consumer.InMemoryConsumerAssociationStore;
+import org.openid4java.consumer.InMemoryNonceVerifier;
+import org.openid4java.discovery.DiscoveryException;
+import org.openid4java.discovery.DiscoveryInformation;
+import org.openid4java.discovery.Identifier;
+import org.openid4java.message.AuthRequest;
+import org.openid4java.message.MessageException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,6 +69,8 @@ public class MyApp implements SparkApplication, AppDirectConstants {
 	private static final String ENV_API_DOMAIN = "api-domain";
 	private static Logger logger = LoggerFactory.getLogger("default");
 
+	private ConsumerManager openIdManager = null;
+
 	/**
 	 * This allows you to run as a java app with the embedded Jetty webserver
 	 * 
@@ -77,12 +90,73 @@ public class MyApp implements SparkApplication, AppDirectConstants {
 		initFilters();
 		initSubscriptionEndPoints();
 		initViewRoutes();
+		initSecureRoute();
 		initExceptionHandler();
 
 		// NOTE: this needs to be called last as a catch-all route of '/*'
 		// routes are matched in the order they are added, so anything added
 		// after this will be unreachable
 		initBaseRoute();
+	}
+
+	private void initSecureRoute() {
+
+		openIdManager = new ConsumerManager(); // TODO verify this is
+												// threadsafe since its shared
+												// for all requests
+		openIdManager.setAssociations(new InMemoryConsumerAssociationStore());
+		openIdManager.setNonceVerifier(new InMemoryNonceVerifier(5000));
+		openIdManager.setMinAssocSessEnc(AssociationSessionType.DH_SHA256);
+
+		before("/secured-page", (request, response) -> {
+			
+			logger.info("authenticating with openid");
+			
+			if ("true".equals(request.params("is_return"))) {
+				logger.info("authenticating the return");
+				processOpenIdAuthenticationReturn(request, response);
+			} else {
+				logger.info("confirming openid identifier has been provided");
+				String identifier = request.queryParams("openid_identifier"); //TODO make this smart enough to handle posts too (i.e. check params too)
+				if (identifier != null) {
+					logger.info("making authentication request");
+					makeOpenIdAuthenticationRequest(identifier, request, response);
+				} 
+			}
+			
+			if(request.session().attribute("identifier") == null){
+				logger.info("unauthorized");
+				halt(401, "you are not authorized");
+			}
+			
+			logger.info("done authenticating with openid");
+		});
+
+		get("/secured-page", (request, response) -> {
+			Map<String, Object> attributes = createViewAttributes("secured.ftl");
+			return new ModelAndView(attributes, "layout.ftl");
+		}, new FreeMarkerEngine());
+	}
+
+	private void makeOpenIdAuthenticationRequest(String identifier, Request request, Response response)
+			throws DiscoveryException, MessageException, ConsumerException {
+		String returnUrl = request.url() + "?is_return=true";
+		List discoveries = openIdManager.discover(identifier);
+		DiscoveryInformation discovered = openIdManager.associate(discoveries);
+		request.session().attribute("openid-disc", discovered);//TODO is this needed???
+		AuthRequest authenticationRequest = openIdManager.authenticate(discovered, returnUrl);
+		response.redirect(authenticationRequest.getDestinationUrl(true));
+	}
+
+	private void processOpenIdAuthenticationReturn(Request request, Response response) {
+		Identifier identifier = verifyOpenIdResponse(request);
+		if(identifier != null){
+			request.session().attribute("identifier", identifier);
+		}
+	}
+
+	private Identifier verifyOpenIdResponse(Request request) {
+		return null;
 	}
 
 	private void initViewRoutes() {
@@ -219,7 +293,7 @@ public class MyApp implements SparkApplication, AppDirectConstants {
 		get("/subscription/change", (request, response) -> {
 			return handleChangeSubscription(request);
 		}, new JsonTransformer());
-		
+
 		get("/subscription/status", (request, response) -> {
 			return handleChangeSubscription(request);
 		}, new JsonTransformer());
@@ -234,12 +308,12 @@ public class MyApp implements SparkApplication, AppDirectConstants {
 		}
 
 		AppDirectResponse json = parseResponse(signedFetch);
-		if(FLAG_STATELESS.equals(json.getFlag())){
+		if (FLAG_STATELESS.equals(json.getFlag())) {
 			return createSuccessResult();
 		}
-		
+
 		String userIdToChange = json.getPayload().getAccount().getAccountIdentifier();
-		
+
 		try {
 			logger.info("About to change account {}", userIdToChange);
 			Account account = Accounts.fetchAccount(userIdToChange);
@@ -284,10 +358,10 @@ public class MyApp implements SparkApplication, AppDirectConstants {
 		}
 
 		AppDirectResponse json = parseResponse(signedFetch);
-		if(FLAG_STATELESS.equals(json.getFlag())){
+		if (FLAG_STATELESS.equals(json.getFlag())) {
 			return createSuccessResult();
 		}
-		
+
 		String userIdToCancel = json.getPayload().getAccount().getAccountIdentifier();
 
 		try {
@@ -331,10 +405,10 @@ public class MyApp implements SparkApplication, AppDirectConstants {
 		}
 
 		AppDirectResponse json = parseResponse(signedFetch);
-		if(FLAG_STATELESS.equals(json.getFlag())){
+		if (FLAG_STATELESS.equals(json.getFlag())) {
 			return createSuccessResult();
 		}
-		
+
 		Account account = new Account();
 		account.setEmail(json.getCreator().getEmail());
 		account.setCompanyId(json.getPayload().getCompany().getUuid());
