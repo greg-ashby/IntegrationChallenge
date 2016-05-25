@@ -81,8 +81,8 @@ public class Accounts {
 			deleteStatement.setString(1, key);
 
 			int rowsAffected = deleteStatement.executeUpdate();
-			if (rowsAffected != 1) {
-				throw new Exception("Could not delete the account");
+			if (rowsAffected == 0) {
+				throw new AccountNotFoundException();
 			}
 		}
 		

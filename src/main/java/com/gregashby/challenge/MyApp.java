@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.gregashby.challenge.accounts.Account;
+import com.gregashby.challenge.accounts.AccountNotFoundException;
 import com.gregashby.challenge.accounts.Accounts;
 import com.gregashby.challenge.db.DbInitializer;
 import com.gregashby.challenge.json.AppDirectResponse;
@@ -146,10 +147,10 @@ public class MyApp implements SparkApplication {
 	 * silly thing to do for security)
 	 */
 	private void initDb() {
-		
-		//load drivers here so they are ready for all routes
+
+		// load drivers here so they are ready for all routes
 		DbInitializer.loadDrivers();
-		
+
 		get("/db/recreate", (request, response) -> {
 			try {
 				DbInitializer.dropTables();
@@ -235,6 +236,10 @@ public class MyApp implements SparkApplication {
 
 		try {
 			Accounts.deleteAccountById(userIdToCancel);
+		} catch (AccountNotFoundException anfe) {
+			logger.info("ERROR - Unable to cancel account");
+			anfe.printStackTrace(System.out);
+			return createErrorResult("ACCOUNT_NOT_CANCELLED", "Could not find the account");
 		} catch (Exception e) {
 			logger.info("ERROR - Unable to cancel account");
 			e.printStackTrace(System.out);
