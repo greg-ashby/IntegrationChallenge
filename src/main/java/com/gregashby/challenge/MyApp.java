@@ -219,6 +219,10 @@ public class MyApp implements SparkApplication {
 		get("/subscription/change", (request, response) -> {
 			return handleChangeSubscription(request);
 		});
+		
+		get("/subscription/status", (request, response) -> {
+			return handleChangeSubscription(request);
+		});
 	}
 
 	private Object handleChangeSubscription(Request request) throws MalformedURLException, OAuthMessageSignerException, OAuthExpectationFailedException, OAuthCommunicationException, IOException {

@@ -7,6 +7,7 @@ import oauth.signpost.http.HttpRequest;
 
 public class MyOAuthConsumer extends DefaultOAuthConsumer {
 
+	private static final long serialVersionUID = 8442408519397425868L;
 	private MyHttpURLConnectionRequestAdapter request = null;
 	private String presetNonce = null;
 	private String presetTimestamp = null;
