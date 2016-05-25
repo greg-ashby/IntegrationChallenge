@@ -1,12 +1,14 @@
 com/gregashby/challenge/accounts/Account.class
 com/gregashby/challenge/json/AppDirectResponse.class
-com/gregashby/challenge/json/Payload.class
 com/gregashby/challenge/json/JsonTransformer.class
 com/gregashby/challenge/MyApp.class
-com/gregashby/challenge/accounts/Accounts.class
-com/gregashby/challenge/json/Company.class
 com/gregashby/challenge/db/DbInitializer.class
 com/gregashby/challenge/oauth/MyHttpURLConnectionRequestAdapter.class
 com/gregashby/challenge/json/Marketplace.class
 com/gregashby/challenge/oauth/MyOAuthConsumer.class
+com/gregashby/challenge/json/Payload.class
+com/gregashby/challenge/accounts/Accounts.class
+com/gregashby/challenge/json/Company.class
+com/gregashby/challenge/json/Account.class
+com/gregashby/challenge/json/Order.class
 com/gregashby/challenge/json/Creator.class

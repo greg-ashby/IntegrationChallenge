@@ -1,4 +1,3 @@
-com/gregashby/challenge/accounts/AccountTest.class
 com/gregashby/challenge/accounts/AccountsTest.class
 com/gregashby/challenge/json/AppDirectResponseTest.class
 com/gregashby/challenge/db/DbConnectionTest.class
