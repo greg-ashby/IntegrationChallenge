@@ -2,7 +2,7 @@ package com.gregashby.challenge.accounts;
 
 public class Account {
 
-	private int id = -1;
+	private String id = null;
 	private String email = null;
 	private String companyId = null;
 	private String editionCode = null;
@@ -43,19 +43,19 @@ public class Account {
 		this.companyId = companyId;
 	}
 
-	public int getId() {
+	public String getId() {
 		return id;
 	}
 
-	public void setId(int id) {
-		this.id = id;
+	public void setId(String uuid) {
+		this.id = uuid;
 	}
 
 	@Override
 	public boolean equals(Object obj) {
 		if (obj.getClass() == Account.class) {
 			Account account = (Account) obj;
-			if (id == account.getId()) {
+			if (id.equals(account.getId())) { // putting on separate lines so it's easier to debug
 				if (email.equals(account.getEmail())) {
 					if (companyId.equals(account.getCompanyId())) {
 						if(editionCode.equals(account.getEditionCode())){

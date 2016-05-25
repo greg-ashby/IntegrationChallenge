@@ -139,7 +139,7 @@ public class MyApp implements SparkApplication {
 			
 			try {
 				Accounts.createAccount(account);
-				if(account.getId() < 1){
+				if(account.getId() == null){
 					throw new Exception("Did not get an error but could not create an account.");
 				}
 			} catch (Exception e) {
@@ -168,7 +168,7 @@ public class MyApp implements SparkApplication {
 			String userIdToCancel = json.getPayload().getAccount().getAccountIdentifier();
 
 			try {
-				Accounts.deleteAccount(Integer.parseInt(userIdToCancel));
+				Accounts.cancelAccount(userIdToCancel);
 			} catch (Exception e) {
 				logger.info("ERROR - Unable to cancel account");
 				e.printStackTrace(System.out);
