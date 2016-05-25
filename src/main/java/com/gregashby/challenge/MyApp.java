@@ -241,6 +241,7 @@ public class MyApp implements SparkApplication {
 		String userIdToCancel = json.getPayload().getAccount().getAccountIdentifier();
 
 		try {
+			logger.info("About to delete account {}", userIdToCancel);
 			Accounts.deleteAccountById(userIdToCancel);
 		} catch (AccountNotFoundException anfe) {
 			logger.info("ERROR - Unable to cancel account");
