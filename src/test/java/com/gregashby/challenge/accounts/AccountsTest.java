@@ -5,8 +5,14 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 
+import java.sql.SQLException;
+import java.util.List;
+
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
+
+import com.gregashby.challenge.db.DbInitializer;
 
 public class AccountsTest {
 
@@ -23,7 +29,7 @@ public class AccountsTest {
 		account.setCompanyId(TEST_COMPANY_ID);
 		account.setEditionCode(TEST_EDITION);
 		account.setStatus(TEST_STATUS);
-		
+
 		Accounts.createAccount(account);
 		assertNotNull(account.getId());
 		Account accountFetched = Accounts.fetchAccount(account.getId());
@@ -33,11 +39,13 @@ public class AccountsTest {
 
 	@After
 	public void tearDown() throws Exception {
-		try {
-			Accounts.deleteAccountByEmail(TEST_EMAIL);
-		} catch (Exception e) {
-			// assume this test didn't create it and ignore
-		}
+	}
+
+	@Before
+	public void setUp() throws Exception {
+		DbInitializer.dropTables();
+		DbInitializer.createTables();
+		DbInitializer.createTestAccounts();
 	}
 
 	@Test
@@ -45,5 +53,14 @@ public class AccountsTest {
 
 		Account account = Accounts.fetchAccount("9999");
 		assertNull(account);
+	}
+
+	@Test
+	public void testGetAllAccounts() throws SQLException {
+		List<Account> accounts = Accounts.getAll();
+		assertEquals(2, accounts.size());
+		accounts.stream().forEach((account) -> {
+			assertNotNull(account.getId());
+		});
 	}
 }

@@ -5,6 +5,8 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class Accounts {
@@ -45,17 +47,21 @@ public class Accounts {
 
 			ResultSet result = selectStatement.executeQuery();
 			if (result.next()) {
-				Account account = new Account();
-				account.setId(result.getString("uuid"));
-				account.setEmail(result.getString("email"));
-				account.setCompanyId(result.getString("companyId"));
-				account.setEditionCode(result.getString("editionCode"));
-				account.setStatus(result.getString("status"));
-				return account;
+				return loadAccountFromResultSet(result);
 			}
 			return null;
 
 		}
+	}
+
+	private static Account loadAccountFromResultSet(ResultSet result) throws SQLException {
+		Account account = new Account();
+		account.setId(result.getString("uuid"));
+		account.setEmail(result.getString("email"));
+		account.setCompanyId(result.getString("companyId"));
+		account.setEditionCode(result.getString("editionCode"));
+		account.setStatus(result.getString("status"));
+		return account;
 	}
 
 	public static void deleteAccountByEmail(String email) throws Exception {
@@ -80,6 +86,19 @@ public class Accounts {
 			}
 		}
 		
+	}
+
+	public static List<Account> getAll() throws SQLException {
+		List<Account> accounts = new ArrayList<Account>();
+		String sql = "SELECT * FROM accounts";
+		try (Connection connection = DriverManager.getConnection(System.getenv(JDBC_DATABASE_URL))) {
+			PreparedStatement statement = connection.prepareStatement(sql);
+			ResultSet result = statement.executeQuery();
+			while(result.next()){
+				accounts.add(loadAccountFromResultSet(result));
+			}
+		}
+		return accounts;
 	}
 
 }

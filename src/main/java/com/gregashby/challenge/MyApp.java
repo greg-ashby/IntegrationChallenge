@@ -71,9 +71,10 @@ public class MyApp implements SparkApplication {
 	 * Tomcat)
 	 */
 	public void init() {
+
+		initDb();
 		initFilters();
 		initSubscriptionEndPoints();
-		initDbRoutes();
 		initViewRoutes();
 		initExceptionHandler();
 
@@ -86,6 +87,7 @@ public class MyApp implements SparkApplication {
 	private void initViewRoutes() {
 		get("/view-subscriptions", (request, response) -> {
 			Map<String, Object> attributes = createViewAttributes("subscriptions.ftl");
+			attributes.put("accounts", Accounts.getAll());
 			return new ModelAndView(attributes, "layout.ftl");
 		}, new FreeMarkerEngine());
 	}
@@ -139,15 +141,15 @@ public class MyApp implements SparkApplication {
 	/**
 	 * This is incredibly stupid to provide a URL to trigger recreating database
 	 * tables from the browser, but I added it to make it convenient for anyone
-	 * wanting to deploy and test this application. Just need to ensure you
-	 * have:
-	 * 
-	 * a) a database b) a JDBC_DATABASE_URL environment variable with a valid
-	 * jdbc url (including username/pwd) c) the account in the JDBC url has full
-	 * permissions on the database (again, a silly thing to do for security)
-	 * 
+	 * wanting to deploy and test this application. Just need to ensure the
+	 * account in your JDBC URL has full permissions on the database (again, a
+	 * silly thing to do for security)
 	 */
-	private void initDbRoutes() {
+	private void initDb() {
+		
+		//load drivers here so they are ready for all routes
+		DbInitializer.loadDrivers();
+		
 		get("/db/recreate", (request, response) -> {
 			try {
 				DbInitializer.dropTables();
@@ -177,6 +179,7 @@ public class MyApp implements SparkApplication {
 		isValidOAuth = true;
 
 		// TODO make sure timestamp is < 10 seconds old to prevent playbacks
+		// (easier than tracking nonces)
 		isValidTimestamp = true;
 
 		// make sure domain of the eventUrl is expected as an extra security
