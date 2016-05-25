@@ -6,18 +6,21 @@ import java.sql.SQLException;
 
 public class DbInitializer {
 
-	private static final String[] CREATE_STATEMENTS = { "create table accounts (id int not null unique, userId varchar(255) not null unique, companyId varchar(255), editionCode varchar(255), status varchar(255))" };
+	private static final String[] CREATE_STATEMENTS = {
+			"create table accounts (id int not null unique, userId varchar(255) not null unique, companyId varchar(255), editionCode varchar(255), status varchar(255))",
+			"insert into accounts values (1, 'ashbygreg@gmail.com', 'asdf', 'asdf', 'asdf')" };
 	private static final String[] DROP_STATEMENTS = { "drop table accounts" };
 
-	static{
+	static {
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
 			Class.forName("org.postgresql.Driver");
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
-		
+
 	}
+
 	public static void dropTables() throws SQLException {
 		execute(DROP_STATEMENTS);
 	}
