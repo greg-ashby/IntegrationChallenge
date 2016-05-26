@@ -169,7 +169,7 @@ public abstract class SignedFetchHandler extends RequestHandlerForJson implement
 		String originalNonce = Utils.extractString("oauth_nonce=\"", originalOauth);
 		String originalSignature = Utils.extractString("oauth_signature=\"", originalOauth);
 		
-		URL url = new URL(request.url());
+		URL url = new URL(request.url() + "?" + request.queryString());
 		HttpURLConnection incomingRequest = (HttpURLConnection) url.openConnection();
 		MyOAuthConsumer consumer = new MyOAuthConsumer(consumerKey, consumerSecret);
 		consumer.setPresetTimestamp(originalTimeStamp);
