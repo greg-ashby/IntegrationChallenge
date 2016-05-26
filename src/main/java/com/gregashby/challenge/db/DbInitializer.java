@@ -5,7 +5,15 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public class DbInitializer {
+import com.gregashby.challenge.Constants;
+
+/**
+ * Convenience class to be able to initialize the database for unit tests and initial app deployments.
+ * 
+ * @author gregashby
+ *
+ */
+public class DbInitializer implements Constants{
 
 	private static final String[] CREATE_STATEMENTS = {
 			"create table accounts (uuid varchar(255) not null unique, email varchar(255) not null unique, companyId varchar(255), editionCode varchar(255), status varchar(255))" };
@@ -48,7 +56,7 @@ public class DbInitializer {
 	 * @throws SQLException 
 	 */
 	public static void createSpecificTestAccount(String uuid) throws SQLException {
-		try (Connection connection = DriverManager.getConnection(System.getenv("JDBC_DATABASE_URL"))) {
+		try (Connection connection = DriverManager.getConnection(System.getenv(ENV_JDBC_DATABASE_URL))) {
 			String sql = "insert into accounts values(?, 'testz@test.com', 'asdf', 'asdf', 'asdf')";
 			PreparedStatement statement = connection.prepareStatement(sql);
 

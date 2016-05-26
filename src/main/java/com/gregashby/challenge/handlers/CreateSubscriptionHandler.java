@@ -14,7 +14,7 @@ import spark.Response;
 
 public class CreateSubscriptionHandler extends SignedFetchHandler implements Constants {
 
-	public Object handleSignedFetchResponse(Request request, Response response, AppDirectJsonResponse json) throws Exception {
+	public Map<String, Object> handleSignedFetchResponse(Request request, Response response, AppDirectJsonResponse json) throws Exception {
 		Account account = new Account();
 		account.setEmail(json.getCreator().getEmail());
 		account.setCompanyId(json.getPayload().getCompany().getUuid());
@@ -29,11 +29,11 @@ public class CreateSubscriptionHandler extends SignedFetchHandler implements Con
 		} catch (Exception e) {
 			MyApp.logger.info("ERROR - Unable to create account");
 			e.printStackTrace(System.out);
-			return createErrorResult(ERROR_UNKNOWN, "Could not create account: " + e.getMessage());
+			return createErrorResultForJson(ERROR_UNKNOWN, "Could not create account: " + e.getMessage());
 		}
 
 		MyApp.logger.info("SUCCESS - Created account# {}", account.getId());
-		Map<String, String> result = createSuccessResult();
+		Map<String, Object> result = createSuccessResultForJson();
 		result.put("accountIdentifier", account.getId());
 		MyApp.logger.info(new JsonTransformer().render(result));
 		return result;

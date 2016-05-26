@@ -9,13 +9,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class Accounts {
+import com.gregashby.challenge.Constants;
 
-	private static final String JDBC_DATABASE_URL = "JDBC_DATABASE_URL";
+/**
+ * Methods for creating, deleting, changing, and fetching Accounts
+ * 
+ * @author gregashby
+ *
+ */
+public class Accounts implements Constants{
 
 	public static void createAccount(Account account) throws Exception {
 
-		try (Connection connection = DriverManager.getConnection(System.getenv(JDBC_DATABASE_URL))) {
+		try (Connection connection = DriverManager.getConnection(System.getenv(ENV_JDBC_DATABASE_URL))) {
 
 			String insertSql = "INSERT INTO accounts VALUES (?, ?, ?, ?, ?)";
 			PreparedStatement insertStatement = connection.prepareStatement(insertSql);
@@ -39,7 +45,7 @@ public class Accounts {
 	}
 
 	public static Account fetchAccount(String uuid) throws Exception {
-		try (Connection connection = DriverManager.getConnection(System.getenv(JDBC_DATABASE_URL))) {
+		try (Connection connection = DriverManager.getConnection(System.getenv(ENV_JDBC_DATABASE_URL))) {
 
 			String selectSql = "SELECT * FROM accounts WHERE uuid=?";
 			PreparedStatement selectStatement = connection.prepareStatement(selectSql);
@@ -75,7 +81,7 @@ public class Accounts {
 	}
 	
 	private static void deleteAccount(String deleteSql, String key) throws Exception{
-		try (Connection connection = DriverManager.getConnection(System.getenv(JDBC_DATABASE_URL))) {
+		try (Connection connection = DriverManager.getConnection(System.getenv(ENV_JDBC_DATABASE_URL))) {
 
 			PreparedStatement deleteStatement = connection.prepareStatement(deleteSql);
 			deleteStatement.setString(1, key);
@@ -91,7 +97,7 @@ public class Accounts {
 	public static List<Account> getAll() throws SQLException {
 		List<Account> accounts = new ArrayList<Account>();
 		String sql = "SELECT * FROM accounts";
-		try (Connection connection = DriverManager.getConnection(System.getenv(JDBC_DATABASE_URL))) {
+		try (Connection connection = DriverManager.getConnection(System.getenv(ENV_JDBC_DATABASE_URL))) {
 			PreparedStatement statement = connection.prepareStatement(sql);
 			ResultSet result = statement.executeQuery();
 			while(result.next()){
@@ -103,7 +109,7 @@ public class Accounts {
 
 	public static void update(Account account) throws Exception {
 		
-		try (Connection connection = DriverManager.getConnection(System.getenv(JDBC_DATABASE_URL))) {
+		try (Connection connection = DriverManager.getConnection(System.getenv(ENV_JDBC_DATABASE_URL))) {
 
 			String updateSql = "UPDATE accounts SET email=?, companyId=?, editionCode=?, status=? WHERE uuid=?";
 			PreparedStatement updateStatement = connection.prepareStatement(updateSql);

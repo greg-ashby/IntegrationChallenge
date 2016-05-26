@@ -1,5 +1,11 @@
 package com.gregashby.challenge.accounts;
 
+/**
+ * POJO for accounts database table
+ * 
+ * @author gregashby
+ *
+ */
 public class Account {
 
 	private String id = null;

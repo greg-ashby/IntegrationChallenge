@@ -1,7 +1,12 @@
 package com.gregashby.challenge.json;
 
+/**
+ * Main class to represent the json response for an App Direct API response.
+ * It's basically a POJO to get the json information easily.
+ * 
+ */
 public class AppDirectJsonResponse {
-	
+
 	private String type = null;
 	private Marketplace marketplace = null;
 	private String applicationUuid = null;
@@ -65,7 +70,5 @@ public class AppDirectJsonResponse {
 	public void setMarketplace(Marketplace marketplace) {
 		this.marketplace = marketplace;
 	}
-
-	
 
 }

@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Map;
 
 import com.google.gson.Gson;
 import com.gregashby.challenge.Constants;
@@ -19,29 +20,51 @@ import oauth.signpost.exception.OAuthMessageSignerException;
 import spark.Request;
 import spark.Response;
 
-public abstract class SignedFetchHandler extends RequestHandler implements Constants {
+/**
+ * Base class for any request handlers that need to perform a signed fetch in
+ * order to handle and respond to an API notication
+ * 
+ * @author gregashby
+ *
+ */
+public abstract class SignedFetchHandler extends RequestHandlerForJson implements Constants {
 
-	public Object handle(Request request, Response response) throws MalformedURLException, IOException,
+	@Override
+	public Map<String, Object> handle(Request request, Response response) throws MalformedURLException, IOException,
 			OAuthMessageSignerException, OAuthExpectationFailedException, OAuthCommunicationException, Exception {
+
+		if (!isValidOAuthRequest(request, response)) {
+			return createErrorResultForJson(ERROR_UNAUTHORIZED, "invalid oauth signature");
+		}
 
 		HttpURLConnection signedFetch = performSignedFetch(request);
 		int responseCode = signedFetch.getResponseCode();
 		if (responseCode != 200) {
 			// TODO understand and handle error conditions better
-			return createErrorResult(ERROR_UNKNOWN, "An unknown error occurred");
+			return createErrorResultForJson(ERROR_UNKNOWN, "An unknown error occurred");
 		}
 
 		AppDirectJsonResponse json = parseResponse(signedFetch);
 		if (FLAG_STATELESS.equals(json.getFlag())) {
-			return createSuccessResult();
+			return createSuccessResultForJson();
 		} else {
 			return handleSignedFetchResponse(request, response, json);
 		}
 	}
-	
-	public abstract Object handleSignedFetchResponse(Request request, Response response, AppDirectJsonResponse json) throws Exception;
 
-	
+	/**
+	 * Abstract method for subclasses to process the json specific to their
+	 * action.
+	 * 
+	 * @param request
+	 * @param response
+	 * @param json
+	 * @return
+	 * @throws Exception
+	 */
+	public abstract Map<String, Object> handleSignedFetchResponse(Request request, Response response,
+			AppDirectJsonResponse json) throws Exception;
+
 	/**
 	 * Performs a signed fetch to the eventUrl request parameter
 	 * 
@@ -78,7 +101,7 @@ public abstract class SignedFetchHandler extends RequestHandler implements Const
 	}
 
 	/**
-	 * Parses a response in a connection and returns a POJO for accessing the
+	 * Parses a json response in a connection and returns a POJO of the
 	 * information
 	 * 
 	 * @param connection
@@ -97,7 +120,7 @@ public abstract class SignedFetchHandler extends RequestHandler implements Const
 		AppDirectJsonResponse appDirectResponse = gson.fromJson(json, AppDirectJsonResponse.class);
 		return appDirectResponse;
 	}
-	
+
 	/**
 	 * Reads the json string from a connection
 	 * 
@@ -116,5 +139,26 @@ public abstract class SignedFetchHandler extends RequestHandler implements Const
 		return json;
 	}
 
+	/**
+	 * This can be used to verify any request and halt the response if its
+	 * invalid
+	 * 
+	 * @param request
+	 * @param response
+	 */
+	private boolean isValidOAuthRequest(Request request, Response response) {
+
+		boolean isValidOAuth = false;
+		boolean isValidTimestamp = false;
+
+		// TODO Implement oauth verification
+		isValidOAuth = true;
+
+		// TODO make sure timestamp is < 10 seconds old to prevent playbacks
+		// (easier than tracking nonces)
+		isValidTimestamp = true;
+
+		return (isValidOAuth && isValidTimestamp);
+	}
 
 }

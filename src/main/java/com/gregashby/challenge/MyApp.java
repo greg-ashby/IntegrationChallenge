@@ -6,51 +6,22 @@ import static spark.Spark.exception;
 import static spark.Spark.get;
 import static spark.Spark.halt;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.openid4java.association.AssociationException;
-import org.openid4java.association.AssociationSessionType;
-import org.openid4java.consumer.ConsumerException;
-import org.openid4java.consumer.ConsumerManager;
-import org.openid4java.consumer.InMemoryConsumerAssociationStore;
-import org.openid4java.consumer.InMemoryNonceVerifier;
-import org.openid4java.consumer.VerificationResult;
-import org.openid4java.discovery.DiscoveryException;
-import org.openid4java.discovery.DiscoveryInformation;
-import org.openid4java.discovery.Identifier;
-import org.openid4java.message.AuthRequest;
-import org.openid4java.message.AuthSuccess;
-import org.openid4java.message.MessageException;
-import org.openid4java.message.ParameterList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.gson.Gson;
-import com.gregashby.challenge.accounts.Account;
-import com.gregashby.challenge.accounts.AccountNotFoundException;
-import com.gregashby.challenge.accounts.Accounts;
 import com.gregashby.challenge.db.DbInitializer;
+import com.gregashby.challenge.handlers.CancelSubscriptionHandler;
+import com.gregashby.challenge.handlers.CatchAllHandler;
+import com.gregashby.challenge.handlers.ChangeSubscriptionHandler;
 import com.gregashby.challenge.handlers.CreateSubscriptionHandler;
-import com.gregashby.challenge.json.AppDirectJsonResponse;
+import com.gregashby.challenge.handlers.InsertTestAccountHandler;
+import com.gregashby.challenge.handlers.LoginHandler;
+import com.gregashby.challenge.handlers.LogoutHandler;
+import com.gregashby.challenge.handlers.RecreateTablesHandler;
+import com.gregashby.challenge.handlers.SecuredPageHandler;
+import com.gregashby.challenge.handlers.ViewSubscriptionsHandler;
 import com.gregashby.challenge.json.JsonTransformer;
-import com.gregashby.challenge.oauth.MyOAuthConsumer;
 
-import oauth.signpost.exception.OAuthCommunicationException;
-import oauth.signpost.exception.OAuthExpectationFailedException;
-import oauth.signpost.exception.OAuthMessageSignerException;
-import spark.ModelAndView;
-import spark.Request;
-import spark.Response;
 import spark.servlet.SparkApplication;
 import spark.template.freemarker.FreeMarkerEngine;
 
@@ -62,17 +33,7 @@ import spark.template.freemarker.FreeMarkerEngine;
  */
 public class MyApp implements SparkApplication, Constants {
 
-	private static final String SESSION_ATTRIBUTE_IDENTIFIER = "identifier";
-	/**
-	 * TODO This class is a bit big and unwieldy now... refactor it as a
-	 * separate routes class that describes all the routes and separate handler
-	 * classes with the functions and utils those route use - leave this as just
-	 * the stub for loading the routes and handlers
-	 */
-
 	public static Logger logger = LoggerFactory.getLogger("default");
-
-	private ConsumerManager openIdManager = null;
 
 	/**
 	 * This allows you to run as a java app with the embedded Jetty webserver
@@ -90,7 +51,6 @@ public class MyApp implements SparkApplication, Constants {
 	public void init() {
 
 		initDb();
-		initFilters();
 		initSubscriptionEndPoints();
 		initViewRoutes();
 		initSecureRoute();
@@ -104,54 +64,12 @@ public class MyApp implements SparkApplication, Constants {
 	}
 
 	private void initLoginRoute() {
-		openIdManager = new ConsumerManager(); // TODO verify this is
-		// threadsafe since its shared
-		// for all requests
-		openIdManager.setAssociations(new InMemoryConsumerAssociationStore());
-		openIdManager.setNonceVerifier(new InMemoryNonceVerifier(5000));
-		openIdManager.setMinAssocSessEnc(AssociationSessionType.DH_SHA256);
-
 		get("/login", (request, response) -> {
-			logger.info("authenticating with openid");
-
-			if ("true".equals(request.queryParams("is_return"))) {
-				logger.info("authenticating the return");
-				processOpenIdAuthenticationReturn(request, response);
-				if (request.session().attribute(SESSION_ATTRIBUTE_IDENTIFIER) == null) {
-					logger.info("sorry, login failed");
-					Map<String, Object> attributes = createViewAttributes(request, "justMessage.ftl", "sorry, login failed");
-					attributes.put("accounts", Accounts.getAll());
-					return new ModelAndView(attributes, "layout.ftl");
-				} else {
-					Map<String, Object> attributes = createViewAttributes(request, "justMessage.ftl", "login success, enjoy the elevated access!");
-					attributes.put("accounts", Accounts.getAll());
-					return new ModelAndView(attributes, "layout.ftl");
-					// TODO get some info from the provider and display it 
-				}
-			} else {
-				logger.info("confirming openid identifier has been provided");
-				String identifier = request.queryParams("openid_identifier");
-				if (identifier != null) {
-					logger.info("making authentication request");
-					makeOpenIdAuthenticationRequest(identifier, request, response);
-					Map<String, Object> attributes = createViewAttributes(request, "justMessage.ftl", "redirecting to login provider");
-					attributes.put("accounts", Accounts.getAll());
-					return new ModelAndView(attributes, "layout.ftl");
-					//return new ModelAndView(null, null);
-				} else {
-					Map<String, Object> attributes = createViewAttributes(request, "justMessage.ftl", "no login provider supplied");
-					attributes.put("accounts", Accounts.getAll());
-					return new ModelAndView(attributes, "layout.ftl");
-				}
-			}
+			return new LoginHandler().handle(request, response);
 		}, new FreeMarkerEngine());
 
 		get("/logout", (request, response) -> {
-			request.session().removeAttribute(SESSION_ATTRIBUTE_IDENTIFIER);
-			//don't want to logout from yahoo, so don't redirect
-			Map<String, Object> attributes = createViewAttributes(request, "justMessage.ftl", "You are now logged out");
-			attributes.put("accounts", Accounts.getAll());
-			return new ModelAndView(attributes, "layout.ftl");
+			return new LogoutHandler().handle(request, response);
 		}, new FreeMarkerEngine());
 	}
 
@@ -165,82 +83,19 @@ public class MyApp implements SparkApplication, Constants {
 		});
 
 		get("/secured-page", (request, response) -> {
-			Map<String, Object> attributes = createViewAttributes(request, "secured.ftl", "");
-			return new ModelAndView(attributes, "layout.ftl");
+			return new SecuredPageHandler().handle(request, response);
 		}, new FreeMarkerEngine());
-	}
-
-	private void makeOpenIdAuthenticationRequest(String identifier, Request request, Response response)
-			throws DiscoveryException, MessageException, ConsumerException {
-		String returnUrl = request.url() + "?is_return=true";
-		List discoveries = openIdManager.discover(identifier);
-		DiscoveryInformation discovered = openIdManager.associate(discoveries);
-		request.session().attribute("openid-disc", discovered);
-		AuthRequest authenticationRequest = openIdManager.authenticate(discovered, returnUrl);
-		response.redirect(authenticationRequest.getDestinationUrl(true));
-	}
-
-	private void processOpenIdAuthenticationReturn(Request request, Response response)
-			throws MessageException, DiscoveryException, AssociationException {
-		Identifier identifier = verifyOpenIdResponse(request);
-		if (identifier != null) {
-			request.session().attribute(SESSION_ATTRIBUTE_IDENTIFIER, identifier);
-		}
-	}
-
-	private Identifier verifyOpenIdResponse(Request request)
-			throws MessageException, DiscoveryException, AssociationException {
-
-		ParameterList response = new ParameterList(getQueryParamsAsMap(request));
-		DiscoveryInformation discovered = (DiscoveryInformation) request.session().attribute("openid-disc");
-		String receivingURL = request.url();
-		String queryString = request.queryString();
-		if (queryString != null && queryString.length() > 0) {
-			receivingURL += "?" + queryString;
-		}
-		VerificationResult verification = openIdManager.verify(receivingURL, response, discovered);
-		Identifier verified = verification.getVerifiedId();
-		if (verified != null) {
-			AuthSuccess authSuccess = (AuthSuccess) verification.getAuthResponse();
-			// receiveSimpleRegistration(request, authSuccess);
-			// receiveAttributeExchange(request, authSuccess);
-			return verified; // success
-		}
-
-		return null;
-
-	}
-
-	/**
-	 * ParameterList constructor expects a Map, and Spark's
-	 * request.queryParamsMap doesn't implement a Map interface for some reason
-	 * so we have to do this the hard map
-	 * 
-	 * @param request
-	 * @return
-	 */
-	private Map<String, String> getQueryParamsAsMap(Request request) {
-
-		Set<String> paramNames = request.queryParams();
-		Map<String, String> params = new HashMap<>();
-		paramNames.stream().forEach((param) -> {
-			params.put(param, request.queryParams(param));
-		});
-		return params;
 	}
 
 	private void initViewRoutes() {
 		get("/view-subscriptions", (request, response) -> {
-			Map<String, Object> attributes = createViewAttributes(request, "subscriptions.ftl", "");
-			attributes.put("accounts", Accounts.getAll());
-			return new ModelAndView(attributes, "layout.ftl");
+			return new ViewSubscriptionsHandler().handle(request, response);
 		}, new FreeMarkerEngine());
 	}
 
 	private void initBaseRoute() {
 		get("/*", (request, response) -> {
-			Map<String, Object> attributes = createViewAttributes(request, "index.ftl", "");
-			return new ModelAndView(attributes, "layout.ftl");
+			return new CatchAllHandler().handle(request, response);
 		}, new FreeMarkerEngine());
 	}
 
@@ -251,41 +106,6 @@ public class MyApp implements SparkApplication, Constants {
 			// in the logs in this case.
 			exception.printStackTrace(System.out);
 			response.body("whoops, something bad happened");
-		});
-	}
-
-	/**
-	 * This creates a basic view object (simple map) with required attributes
-	 * for all layouts
-	 * 
-	 * @param request
-	 */
-	private Map<String, Object> createViewAttributes(Request request, String templateName, String message) {
-		Map<String, Object> attributes = new HashMap<>();
-		attributes.put("title", "Greg Ashby's Integration Challenge App");
-		attributes.put("templateName", templateName);
-		attributes.put("message", message);
-		if (request.session().attribute(SESSION_ATTRIBUTE_IDENTIFIER) != null) {
-			attributes.put("loggedin", "true");
-		}
-		return attributes;
-	}
-
-	/**
-	 * Initializes 'filters' which are called 'before' or 'after' routes that
-	 * match the filter paths
-	 */
-	private void initFilters() {
-
-		// this will ensure any end points behind /subscription/... are verified
-		before("/subscription/*", (request, response) -> {
-			verifyOAuthRequest(request, response);
-		});
-
-		// this will ensure all responses from end points behind
-		// /subscription/... are json
-		after("/subscription/*", (request, response) -> {
-			response.type("application/json");
 		});
 	}
 
@@ -302,59 +122,14 @@ public class MyApp implements SparkApplication, Constants {
 		DbInitializer.loadDrivers();
 
 		get("/db/recreate", (request, response) -> {
-			try {
-				DbInitializer.dropTables();
-			} catch (Exception e) {
-				// just means the tables don't exist yet, so suppress and ignore
-				e.printStackTrace(System.out);
-			}
-			DbInitializer.createTables();
-			Map<String, Object> attributes = createViewAttributes(request, "justMessage.ftl", "created all tables");
-			attributes.put("accounts", Accounts.getAll());
-			return new ModelAndView(attributes, "layout.ftl");
+			return new RecreateTablesHandler().handle(request, response);
 		}, new FreeMarkerEngine());
 
 		get("/db/insert/:uuid", (request, response) -> {
-			String uuid = request.params("uuid");
-			DbInitializer.createSpecificTestAccount(uuid);
-			Map<String, Object> attributes = createViewAttributes(request, "justMessage.ftl", "created the account");
-			attributes.put("accounts", Accounts.getAll());
-			return new ModelAndView(attributes, "layout.ftl");
+			return new InsertTestAccountHandler().handle(request, response);
 		}, new FreeMarkerEngine());
 	}
 
-	/**
-	 * This can be used to verify any request and halt the response if its
-	 * invalid
-	 * 
-	 * @param request
-	 * @param response
-	 */
-	private void verifyOAuthRequest(Request request, Response response) {
-
-		boolean isValidOAuth = false;
-		boolean isValidTimestamp = false;
-		boolean isValidEventUrl = false;
-
-		// TODO Implement oauth verification
-		isValidOAuth = true;
-
-		// TODO make sure timestamp is < 10 seconds old to prevent playbacks
-		// (easier than tracking nonces)
-		isValidTimestamp = true;
-
-		// make sure domain of the eventUrl is expected as an extra security
-		// check
-		String apiDomain = System.getenv(ENV_API_DOMAIN);
-		String eventUrl = request.queryParams(PARAM_EVENT_URL);
-		if (eventUrl != null && eventUrl.startsWith(apiDomain)) {
-			isValidEventUrl = true;
-		}
-
-		if (!(isValidEventUrl && isValidOAuth && isValidTimestamp)) {
-			halt(401, "Unauthorized request");
-		}
-	}
 
 	/**
 	 * Initialize the routes for handling subscription notifications (create,
@@ -362,247 +137,26 @@ public class MyApp implements SparkApplication, Constants {
 	 */
 	private void initSubscriptionEndPoints() {
 
+		// this will ensure all responses from end points behind
+		// /subscription/... are json
+		after("/subscription/*", (request, response) -> {
+			response.type("application/json");
+		});
+
 		get("/subscription/create", (request, response) -> {
 			return new CreateSubscriptionHandler().handle(request, response);
 		}, new JsonTransformer());
 
 		get("/subscription/cancel", (request, response) -> {
-			return handleCancelSubscription(request);
+			return new CancelSubscriptionHandler().handle(request, response);
 		}, new JsonTransformer());
 
 		get("/subscription/change", (request, response) -> {
-			return handleChangeSubscription(request);
+			return new ChangeSubscriptionHandler().handle(request, response);
 		}, new JsonTransformer());
 
 		get("/subscription/status", (request, response) -> {
-			return handleChangeSubscription(request);
+			return new ChangeSubscriptionHandler().handle(request, response);
 		}, new JsonTransformer());
-	}
-
-	private Object handleChangeSubscription(Request request) throws Exception {
-		HttpURLConnection signedFetch = performSignedFetch(request);
-		int responseCode = signedFetch.getResponseCode();
-		if (responseCode != 200) {
-			// TODO understand and handle error conditions better
-			return createErrorResult(ERROR_UNKNOWN, "An unknown error occurred");
-		}
-
-		AppDirectJsonResponse json = parseResponse(signedFetch);
-		if (FLAG_STATELESS.equals(json.getFlag())) {
-			return createSuccessResult();
-		}
-
-		String userIdToChange = json.getPayload().getAccount().getAccountIdentifier();
-
-		try {
-			logger.info("About to change account {}", userIdToChange);
-			Account account = Accounts.fetchAccount(userIdToChange);
-			account.setEditionCode(json.getPayload().getOrder().getEditionCode());
-			account.setStatus(json.getPayload().getAccount().getStatus());
-			Accounts.update(account);
-		} catch (AccountNotFoundException anfe) {
-			logger.info("ERROR - Unable to change account");
-			anfe.printStackTrace(System.out);
-			return createErrorResult(ERROR_ACCOUNT_NOT_FOUND, "Could not find the account");
-		} catch (Exception e) {
-			logger.info("ERROR - Unable to cancel account");
-			e.printStackTrace(System.out);
-			return createErrorResult(ERROR_UNKNOWN, "Could not change account: " + e.getMessage());
-		}
-
-		logger.info("SUCCESS - CHANGED SUBSCRIPTION# {}", userIdToChange);
-		Map<String, String> result = createSuccessResult();
-		logger.info(new JsonTransformer().render(result));
-		return result;
-
-	}
-
-	/**
-	 * logic to handle a cancel subscription notification
-	 * 
-	 * @param request
-	 * @return
-	 * @throws MalformedURLException
-	 * @throws IOException
-	 * @throws OAuthMessageSignerException
-	 * @throws OAuthExpectationFailedException
-	 * @throws OAuthCommunicationException
-	 */
-	private Object handleCancelSubscription(Request request) throws MalformedURLException, IOException,
-			OAuthMessageSignerException, OAuthExpectationFailedException, OAuthCommunicationException {
-		HttpURLConnection signedFetch = performSignedFetch(request);
-		int responseCode = signedFetch.getResponseCode();
-		if (responseCode != 200) {
-			// TODO understand and handle error conditions better
-			return createErrorResult(ERROR_UNKNOWN, "An unknown error occurred");
-		}
-
-		AppDirectJsonResponse json = parseResponse(signedFetch);
-		if (FLAG_STATELESS.equals(json.getFlag())) {
-			return createSuccessResult();
-		}
-
-		String userIdToCancel = json.getPayload().getAccount().getAccountIdentifier();
-
-		try {
-			logger.info("About to delete account {}", userIdToCancel);
-			Accounts.deleteAccountById(userIdToCancel);
-		} catch (AccountNotFoundException anfe) {
-			logger.info("ERROR - Unable to cancel account");
-			anfe.printStackTrace(System.out);
-			return createErrorResult(ERROR_ACCOUNT_NOT_FOUND, "Could not find the account");
-		} catch (Exception e) {
-			logger.info("ERROR - Unable to cancel account");
-			e.printStackTrace(System.out);
-			return createErrorResult(ERROR_UNKNOWN, "Could not cancel account: " + e.getMessage());
-		}
-
-		logger.info("SUCCESS - CANCELED SUBSCRIPTION# {}", userIdToCancel);
-		Map<String, String> result = createSuccessResult();
-		return result;
-	}
-
-	/**
-	 * logic to handle a create subscription notification
-	 * 
-	 * @param request
-	 * @return
-	 * @throws MalformedURLException
-	 * @throws IOException
-	 * @throws OAuthMessageSignerException
-	 * @throws OAuthExpectationFailedException
-	 * @throws OAuthCommunicationException
-	 * @throws Exception
-	 */
-	private Object handleCreateSubscription(Request request) throws MalformedURLException, IOException,
-			OAuthMessageSignerException, OAuthExpectationFailedException, OAuthCommunicationException, Exception {
-
-		HttpURLConnection signedFetch = performSignedFetch(request);
-		int responseCode = signedFetch.getResponseCode();
-		if (responseCode != 200) {
-			// TODO understand and handle error conditions better
-			return createErrorResult(ERROR_UNKNOWN, "An unknown error occurred");
-		}
-
-		AppDirectJsonResponse json = parseResponse(signedFetch);
-		if (FLAG_STATELESS.equals(json.getFlag())) {
-			return createSuccessResult();
-		}
-
-		Account account = new Account();
-		account.setEmail(json.getCreator().getEmail());
-		account.setCompanyId(json.getPayload().getCompany().getUuid());
-		account.setEditionCode(json.getPayload().getOrder().getEditionCode());
-		account.setStatus("FREE_TRIAL"); // TODO confirm if this is the correct
-											// initial status
-
-		try {
-			Accounts.createAccount(account);
-			if (account.getId() == null) {
-				throw new Exception("Did not get an error but could not create an account.");
-			}
-		} catch (Exception e) {
-			logger.info("ERROR - Unable to create account");
-			e.printStackTrace(System.out);
-			return createErrorResult(ERROR_UNKNOWN, "Could not create account: " + e.getMessage());
-		}
-
-		logger.info("SUCCESS - Created account# {}", account.getId());
-		Map<String, String> result = createSuccessResult();
-		result.put("accountIdentifier", account.getId());
-		logger.info(new JsonTransformer().render(result));
-		return result;
-	}
-
-	/**
-	 * Creates a basic object to start composing a successful response
-	 * 
-	 * @return Map - this can be converted to a json object with JsonTransformer
-	 */
-	private Map<String, String> createSuccessResult() {
-		Map<String, String> map = new LinkedHashMap<>();
-		map.put("success", "true");
-		return map;
-	}
-
-	/**
-	 * Parses a response in a connection and returns a POJO for accessing the
-	 * information
-	 * 
-	 * @param connection
-	 *            - an open http connection. Assumes the connection has been
-	 *            made and the response code verified
-	 * 
-	 * @return a POJO with all the info - well, the stuff I thought I might need
-	 *         anyway
-	 * 
-	 * @throws IOException
-	 */
-	private AppDirectJsonResponse parseResponse(HttpURLConnection connection) throws IOException {
-		String json = extractJsonFromRequest(connection);
-		logger.info(json);
-		Gson gson = new Gson();
-		AppDirectJsonResponse appDirectResponse = gson.fromJson(json, AppDirectJsonResponse.class);
-		return appDirectResponse;
-	}
-
-	private String extractJsonFromRequest(HttpURLConnection connection) throws IOException {
-		BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-		String inputLine = null;
-		StringBuffer sb = new StringBuffer();
-		while ((inputLine = in.readLine()) != null) {
-			sb.append(inputLine);
-		}
-		String json = sb.toString();
-		return json;
-	}
-
-	/**
-	 * Creates a basic object to start composing an unsuccessful response
-	 * 
-	 * @return Map - this can be converted to a json object with JsonTransformer
-	 */
-	private Map<String, String> createErrorResult(String errorCode, String message) {
-		Map<String, String> map = new LinkedHashMap<>();
-		map.put("success", "false");
-		map.put("errorCode", errorCode);
-		map.put("message", message);
-		return map;
-	}
-
-	/**
-	 * Does the actual signedFetch back to the eventUrl from the notification
-	 * request
-	 * 
-	 * @param request
-	 *            - the notification request. Assumed verified by before filters
-	 * 
-	 * @return an open request. Callers need to verify the response code is
-	 *         valid.
-	 * 
-	 * @throws MalformedURLException
-	 * @throws IOException
-	 * @throws OAuthMessageSignerException
-	 * @throws OAuthExpectationFailedException
-	 * @throws OAuthCommunicationException
-	 */
-	private HttpURLConnection performSignedFetch(Request request) throws MalformedURLException, IOException,
-			OAuthMessageSignerException, OAuthExpectationFailedException, OAuthCommunicationException {
-
-		String eventUrl = request.queryParams(PARAM_EVENT_URL);
-		String consumerKey = System.getenv(ENV_CONSUMER_KEY);
-		String consumerSecret = System.getenv(ENV_CONSUMER_SECRET);
-
-		URL url = new URL(eventUrl);
-		HttpURLConnection outgoingRequest = (HttpURLConnection) url.openConnection();
-		outgoingRequest.setRequestProperty("Content-Type", "application/json");
-		outgoingRequest.setRequestProperty("Accept", "application/json");
-
-		MyOAuthConsumer consumer = new MyOAuthConsumer(consumerKey, consumerSecret);
-		consumer.sign(outgoingRequest);
-		outgoingRequest.connect();
-		logger.info("Request sent! Response code is {}", outgoingRequest.getResponseCode());
-
-		return outgoingRequest;
 	}
 }
