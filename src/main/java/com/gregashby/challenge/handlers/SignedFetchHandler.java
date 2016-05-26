@@ -1,5 +1,7 @@
 package com.gregashby.challenge.handlers;
 
+import static com.gregashby.challenge.MyApp.logger;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -10,7 +12,6 @@ import java.util.Map;
 
 import com.google.gson.Gson;
 import com.gregashby.challenge.Constants;
-import com.gregashby.challenge.MyApp;
 import com.gregashby.challenge.json.AppDirectJsonResponse;
 import com.gregashby.challenge.oauth.MyOAuthConsumer;
 import com.gregashby.challenge.utils.Utils;
@@ -96,7 +97,7 @@ public abstract class SignedFetchHandler extends RequestHandlerForJson implement
 		MyOAuthConsumer consumer = new MyOAuthConsumer(consumerKey, consumerSecret);
 		consumer.sign(outgoingRequest);
 		outgoingRequest.connect();
-		MyApp.logger.info("Request sent! Response code is {}", outgoingRequest.getResponseCode());
+		logger.info("Request sent! Response code is {}", outgoingRequest.getResponseCode());
 
 		return outgoingRequest;
 	}
@@ -116,7 +117,7 @@ public abstract class SignedFetchHandler extends RequestHandlerForJson implement
 	 */
 	protected AppDirectJsonResponse parseResponse(HttpURLConnection connection) throws IOException {
 		String json = extractJsonFromRequest(connection);
-		MyApp.logger.info(json);
+		logger.info(json);
 		Gson gson = new Gson();
 		AppDirectJsonResponse appDirectResponse = gson.fromJson(json, AppDirectJsonResponse.class);
 		return appDirectResponse;
@@ -162,10 +163,11 @@ public abstract class SignedFetchHandler extends RequestHandlerForJson implement
 		String consumerSecret = System.getenv(ENV_CONSUMER_SECRET);
 
 		String originalOauth = request.headers("authorization");
-		MyApp.logger.info("ORIGINAL AUTHORIZATION IS {}", originalOauth);
+		logger.info("ORIGINAL AUTHORIZATION IS {}", originalOauth);
 		
 		String originalTimeStamp = Utils.extractString("oauth_timestamp=\"", originalOauth);
 		String originalNonce = Utils.extractString("oauth_nonce=\"", originalOauth);
+		String originalSignature = Utils.extractString("oauth_signature=\"", originalOauth);
 		
 		URL url = new URL(request.url());
 		HttpURLConnection incomingRequest = (HttpURLConnection) url.openConnection();
@@ -174,7 +176,10 @@ public abstract class SignedFetchHandler extends RequestHandlerForJson implement
 		consumer.setPresetNonce(originalNonce);
 		consumer.sign(incomingRequest);
 		
-		MyApp.logger.info("RECALCULATED OAUTH HEADER IS {}", consumer.getAuthHeader());
+		logger.info("RECALCULATED OAUTH HEADER IS {}", consumer.getAuthHeader());
+		
+		String newSignature = Utils.extractString("oauth_signature=\"", consumer.getAuthHeader());
+		logger.info("********** signature {}, new {}", originalSignature, newSignature);
 		
 		// TODO make sure timestamp is < 10 seconds old to prevent playbacks
 		// (easier than tracking nonces)
