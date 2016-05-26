@@ -16,17 +16,22 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import org.openid4java.association.AssociationException;
 import org.openid4java.association.AssociationSessionType;
 import org.openid4java.consumer.ConsumerException;
 import org.openid4java.consumer.ConsumerManager;
 import org.openid4java.consumer.InMemoryConsumerAssociationStore;
 import org.openid4java.consumer.InMemoryNonceVerifier;
+import org.openid4java.consumer.VerificationResult;
 import org.openid4java.discovery.DiscoveryException;
 import org.openid4java.discovery.DiscoveryInformation;
 import org.openid4java.discovery.Identifier;
 import org.openid4java.message.AuthRequest;
+import org.openid4java.message.AuthSuccess;
 import org.openid4java.message.MessageException;
+import org.openid4java.message.ParameterList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,11 +61,12 @@ import spark.template.freemarker.FreeMarkerEngine;
  */
 public class MyApp implements SparkApplication, AppDirectConstants {
 
+	private static final String SESSION_ATTRIBUTE_IDENTIFIER = "identifier";
 	/**
-	 * TODO Refactor this as: - separate routes class that describes all the
-	 * route handling (all the initXYZ()) - separate handler class with the
-	 * functions and utils those route use - leave this as just the stub for
-	 * loading the class
+	 * TODO This class is a bit big and unwieldy now... refactor it as a
+	 * separate routes class that describes all the routes and separate handler
+	 * classes with the functions and utils those route use - leave this as just
+	 * the stub for loading the routes and handlers
 	 */
 
 	private static final String ENV_CONSUMER_SECRET = "consumer-secret";
@@ -111,35 +117,58 @@ public class MyApp implements SparkApplication, AppDirectConstants {
 		get("/login", (request, response) -> {
 			logger.info("authenticating with openid");
 
-			if ("true".equals(request.params("is_return"))) {
+			if ("true".equals(request.queryParams("is_return"))) {
 				logger.info("authenticating the return");
 				processOpenIdAuthenticationReturn(request, response);
+				if (request.session().attribute(SESSION_ATTRIBUTE_IDENTIFIER) == null) {
+					logger.info("sorry, login failed");
+					Map<String, Object> attributes = createViewAttributes(request, "justMessage.ftl", "sorry, login failed");
+					attributes.put("accounts", Accounts.getAll());
+					return new ModelAndView(attributes, "layout.ftl");
+				} else {
+					Map<String, Object> attributes = createViewAttributes(request, "justMessage.ftl", "login success, enjoy the elevated access!");
+					attributes.put("accounts", Accounts.getAll());
+					return new ModelAndView(attributes, "layout.ftl");
+					// TODO get some info from the provider and display it 
+				}
 			} else {
 				logger.info("confirming openid identifier has been provided");
 				String identifier = request.queryParams("openid_identifier");
 				if (identifier != null) {
 					logger.info("making authentication request");
 					makeOpenIdAuthenticationRequest(identifier, request, response);
+					Map<String, Object> attributes = createViewAttributes(request, "justMessage.ftl", "redirecting to login provider");
+					attributes.put("accounts", Accounts.getAll());
+					return new ModelAndView(attributes, "layout.ftl");
+					//return new ModelAndView(null, null);
+				} else {
+					Map<String, Object> attributes = createViewAttributes(request, "justMessage.ftl", "no login provider supplied");
+					attributes.put("accounts", Accounts.getAll());
+					return new ModelAndView(attributes, "layout.ftl");
 				}
 			}
+		}, new FreeMarkerEngine());
 
-			logger.info("done authenticating with openid");
-			return "logged in";
-		});
-		
+		get("/logout", (request, response) -> {
+			request.session().removeAttribute(SESSION_ATTRIBUTE_IDENTIFIER);
+			//don't want to logout from yahoo, so don't redirect
+			Map<String, Object> attributes = createViewAttributes(request, "justMessage.ftl", "You are now logged out");
+			attributes.put("accounts", Accounts.getAll());
+			return new ModelAndView(attributes, "layout.ftl");
+		}, new FreeMarkerEngine());
 	}
 
 	private void initSecureRoute() {
 
 		before("/secured-page", (request, response) -> {
-			if (request.session().attribute("identifier") == null) {
+			if (request.session().attribute(SESSION_ATTRIBUTE_IDENTIFIER) == null) {
 				logger.info("unauthorized");
 				halt(401, "you are not authorized");
 			}
 		});
 
 		get("/secured-page", (request, response) -> {
-			Map<String, Object> attributes = createViewAttributes("secured.ftl");
+			Map<String, Object> attributes = createViewAttributes(request, "secured.ftl", "");
 			return new ModelAndView(attributes, "layout.ftl");
 		}, new FreeMarkerEngine());
 	}
@@ -149,26 +178,63 @@ public class MyApp implements SparkApplication, AppDirectConstants {
 		String returnUrl = request.url() + "?is_return=true";
 		List discoveries = openIdManager.discover(identifier);
 		DiscoveryInformation discovered = openIdManager.associate(discoveries);
-		request.session().attribute("openid-disc", discovered);// TODO is this
-																// needed???
+		request.session().attribute("openid-disc", discovered);
 		AuthRequest authenticationRequest = openIdManager.authenticate(discovered, returnUrl);
 		response.redirect(authenticationRequest.getDestinationUrl(true));
 	}
 
-	private void processOpenIdAuthenticationReturn(Request request, Response response) {
+	private void processOpenIdAuthenticationReturn(Request request, Response response)
+			throws MessageException, DiscoveryException, AssociationException {
 		Identifier identifier = verifyOpenIdResponse(request);
 		if (identifier != null) {
-			request.session().attribute("identifier", identifier);
+			request.session().attribute(SESSION_ATTRIBUTE_IDENTIFIER, identifier);
 		}
 	}
 
-	private Identifier verifyOpenIdResponse(Request request) {
+	private Identifier verifyOpenIdResponse(Request request)
+			throws MessageException, DiscoveryException, AssociationException {
+
+		ParameterList response = new ParameterList(getQueryParamsAsMap(request));
+		DiscoveryInformation discovered = (DiscoveryInformation) request.session().attribute("openid-disc");
+		String receivingURL = request.url();
+		String queryString = request.queryString();
+		if (queryString != null && queryString.length() > 0) {
+			receivingURL += "?" + queryString;
+		}
+		VerificationResult verification = openIdManager.verify(receivingURL, response, discovered);
+		Identifier verified = verification.getVerifiedId();
+		if (verified != null) {
+			AuthSuccess authSuccess = (AuthSuccess) verification.getAuthResponse();
+			// receiveSimpleRegistration(request, authSuccess);
+			// receiveAttributeExchange(request, authSuccess);
+			return verified; // success
+		}
+
 		return null;
+
+	}
+
+	/**
+	 * ParameterList constructor expects a Map, and Spark's
+	 * request.queryParamsMap doesn't implement a Map interface for some reason
+	 * so we have to do this the hard map
+	 * 
+	 * @param request
+	 * @return
+	 */
+	private Map<String, String> getQueryParamsAsMap(Request request) {
+
+		Set<String> paramNames = request.queryParams();
+		Map<String, String> params = new HashMap<>();
+		paramNames.stream().forEach((param) -> {
+			params.put(param, request.queryParams(param));
+		});
+		return params;
 	}
 
 	private void initViewRoutes() {
 		get("/view-subscriptions", (request, response) -> {
-			Map<String, Object> attributes = createViewAttributes("subscriptions.ftl");
+			Map<String, Object> attributes = createViewAttributes(request, "subscriptions.ftl", "");
 			attributes.put("accounts", Accounts.getAll());
 			return new ModelAndView(attributes, "layout.ftl");
 		}, new FreeMarkerEngine());
@@ -176,7 +242,7 @@ public class MyApp implements SparkApplication, AppDirectConstants {
 
 	private void initBaseRoute() {
 		get("/*", (request, response) -> {
-			Map<String, Object> attributes = createViewAttributes("index.ftl");
+			Map<String, Object> attributes = createViewAttributes(request, "index.ftl", "");
 			return new ModelAndView(attributes, "layout.ftl");
 		}, new FreeMarkerEngine());
 	}
@@ -194,11 +260,17 @@ public class MyApp implements SparkApplication, AppDirectConstants {
 	/**
 	 * This creates a basic view object (simple map) with required attributes
 	 * for all layouts
+	 * 
+	 * @param request
 	 */
-	private Map<String, Object> createViewAttributes(String templateName) {
+	private Map<String, Object> createViewAttributes(Request request, String templateName, String message) {
 		Map<String, Object> attributes = new HashMap<>();
 		attributes.put("title", "Greg Ashby's Integration Challenge App");
 		attributes.put("templateName", templateName);
+		attributes.put("message", message);
+		if (request.session().attribute(SESSION_ATTRIBUTE_IDENTIFIER) != null) {
+			attributes.put("loggedin", "true");
+		}
 		return attributes;
 	}
 
@@ -240,14 +312,18 @@ public class MyApp implements SparkApplication, AppDirectConstants {
 				e.printStackTrace(System.out);
 			}
 			DbInitializer.createTables();
-			return "created all tables";
-		});
+			Map<String, Object> attributes = createViewAttributes(request, "justMessage.ftl", "created all tables");
+			attributes.put("accounts", Accounts.getAll());
+			return new ModelAndView(attributes, "layout.ftl");
+		}, new FreeMarkerEngine());
 
 		get("/db/insert/:uuid", (request, response) -> {
 			String uuid = request.params("uuid");
 			DbInitializer.createSpecificTestAccount(uuid);
-			return "created the account";
-		});
+			Map<String, Object> attributes = createViewAttributes(request, "justMessage.ftl", "created the account");
+			attributes.put("accounts", Accounts.getAll());
+			return new ModelAndView(attributes, "layout.ftl");
+		}, new FreeMarkerEngine());
 	}
 
 	/**
