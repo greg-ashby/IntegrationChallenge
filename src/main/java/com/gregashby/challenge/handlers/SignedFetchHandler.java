@@ -147,12 +147,29 @@ public abstract class SignedFetchHandler extends RequestHandlerForJson implement
 	 * 
 	 * @param request
 	 * @param response
-	 * @throws IOException 
-	 * @throws OAuthCommunicationException 
-	 * @throws OAuthExpectationFailedException 
-	 * @throws OAuthMessageSignerException 
+	 * @throws IOException
+	 * @throws OAuthCommunicationException
+	 * @throws OAuthExpectationFailedException
+	 * @throws OAuthMessageSignerException
 	 */
-	private boolean isValidOAuthRequest(Request request, Response response) throws IOException, OAuthMessageSignerException, OAuthExpectationFailedException, OAuthCommunicationException {
+	private boolean isValidOAuthRequest(Request request, Response response) throws IOException,
+			OAuthMessageSignerException, OAuthExpectationFailedException, OAuthCommunicationException {
+
+		logger.info("************* REQUEST ************");
+		logger.info("BODY: {}", request.body());
+		request.attributes().stream().forEach((name) -> {
+			logger.info("ATTRIBUTE {} = {}", name, request.attribute(name));
+		});
+		request.headers().stream().forEach((name) -> {
+			logger.info("HEADER {} = {}", name, request.headers(name));
+		});
+		logger.info("QUERY STRING: {}", request.queryString());
+		request.queryParams().stream().forEach((name) -> {
+			logger.info("QUERY PARAM {} = {}", name, request.queryParams(name));
+		});
+		logger.info("METHOD: {}", request.requestMethod());
+		logger.info("URL: {}", request.url());
+		logger.info("************* END ************");
 
 		boolean isValidOAuth = false;
 		boolean isValidTimestamp = false;
@@ -164,31 +181,29 @@ public abstract class SignedFetchHandler extends RequestHandlerForJson implement
 
 		String originalOauth = request.headers("authorization");
 		logger.info("ORIGINAL AUTHORIZATION IS {}", originalOauth);
-		
+
 		String originalTimeStamp = Utils.extractString("oauth_timestamp=\"", originalOauth);
 		String originalNonce = Utils.extractString("oauth_nonce=\"", originalOauth);
 		String originalSignature = Utils.extractString("oauth_signature=\"", originalOauth);
-		
-		URL url = new URL(request.url() + "?" + request.queryString());
+
+		URL url = new URL(request.url());
+
 		HttpURLConnection incomingRequest = (HttpURLConnection) url.openConnection();
 		MyOAuthConsumer consumer = new MyOAuthConsumer(consumerKey, consumerSecret);
 		consumer.setPresetTimestamp(originalTimeStamp);
 		consumer.setPresetNonce(originalNonce);
 		consumer.sign(incomingRequest);
-		
+
 		logger.info("RECALCULATED OAUTH HEADER IS {}", consumer.getAuthHeader());
-		
+
 		String newSignature = Utils.extractString("oauth_signature=\"", consumer.getAuthHeader());
 		logger.info("********** signature {}, new {}", originalSignature, newSignature);
-		
+
 		// TODO make sure timestamp is < 10 seconds old to prevent playbacks
 		// (easier than tracking nonces)
 		isValidTimestamp = true;
 
 		return (isValidOAuth && isValidTimestamp);
 	}
-
-
-
 
 }
