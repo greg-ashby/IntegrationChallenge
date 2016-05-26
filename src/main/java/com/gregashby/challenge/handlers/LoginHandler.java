@@ -112,10 +112,6 @@ public class LoginHandler extends RequestHandlerForFreeMarker implements Constan
 		if (queryString != null && queryString.length() > 0) {
 			receivingURL += "?" + queryString;
 		}
-//		System.out.println(receivingURL);
-//		response.getParameters().stream().forEach((param) -> {
-//			System.out.println(param + " = " + response.getParameterValue(param.toString()));
-//		});
 		VerificationResult verification = getManager().verify(receivingURL, response, discovered);
 		Identifier verified = verification.getVerifiedId();
 		if (verified != null) {

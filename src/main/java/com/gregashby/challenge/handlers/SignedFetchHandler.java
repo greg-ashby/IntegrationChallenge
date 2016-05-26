@@ -145,15 +145,29 @@ public abstract class SignedFetchHandler extends RequestHandlerForJson implement
 	 * 
 	 * @param request
 	 * @param response
+	 * @throws IOException 
+	 * @throws OAuthCommunicationException 
+	 * @throws OAuthExpectationFailedException 
+	 * @throws OAuthMessageSignerException 
 	 */
-	private boolean isValidOAuthRequest(Request request, Response response) {
+	private boolean isValidOAuthRequest(Request request, Response response) throws IOException, OAuthMessageSignerException, OAuthExpectationFailedException, OAuthCommunicationException {
 
 		boolean isValidOAuth = false;
 		boolean isValidTimestamp = false;
 
 		// TODO Implement oauth verification
 		isValidOAuth = true;
+		String consumerKey = System.getenv(ENV_CONSUMER_KEY);
+		String consumerSecret = System.getenv(ENV_CONSUMER_SECRET);
 
+		URL url = new URL(request.url());
+		HttpURLConnection incomingRequest = (HttpURLConnection) url.openConnection();
+		MyOAuthConsumer consumer = new MyOAuthConsumer(consumerKey, consumerSecret);
+		consumer.sign(incomingRequest);
+		
+		MyApp.logger.info("RECALCULATED OAUTH HEADER IS {}", consumer.getAuthHeader());
+		MyApp.logger.info("ORIGINAL WAS {}", request.headers("authorization"));
+		
 		// TODO make sure timestamp is < 10 seconds old to prevent playbacks
 		// (easier than tracking nonces)
 		isValidTimestamp = true;
