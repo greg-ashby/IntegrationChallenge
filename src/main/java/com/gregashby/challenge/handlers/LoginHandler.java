@@ -30,15 +30,21 @@ import spark.Response;
 
 public class LoginHandler extends RequestHandlerForFreeMarker implements Constants {
 
-	private ConsumerManager openIdManager = null;
+	private static ConsumerManager openIdManager = null;
+	
+	private static ConsumerManager getManager(){
+		if(openIdManager == null){
+			openIdManager = new ConsumerManager();
+			openIdManager.setAssociations(new InMemoryConsumerAssociationStore());
+			openIdManager.setNonceVerifier(new InMemoryNonceVerifier(5000));
+			openIdManager.setMinAssocSessEnc(AssociationSessionType.DH_SHA256);
+		}
+		return openIdManager;
+	}
 
 	@Override
 	public ModelAndView handle(Request request, Response response) throws Exception {
-		openIdManager = new ConsumerManager();
-		openIdManager.setAssociations(new InMemoryConsumerAssociationStore());
-		openIdManager.setNonceVerifier(new InMemoryNonceVerifier(5000));
-		openIdManager.setMinAssocSessEnc(AssociationSessionType.DH_SHA256);
-
+		
 		MyApp.logger.info("authenticating with openid");
 
 		if ("true".equals(request.queryParams("is_return"))) {
@@ -81,10 +87,10 @@ public class LoginHandler extends RequestHandlerForFreeMarker implements Constan
 	private void makeOpenIdAuthenticationRequest(String identifier, Request request, Response response)
 			throws DiscoveryException, MessageException, ConsumerException {
 		String returnUrl = request.url() + "?is_return=true";
-		List discoveries = openIdManager.discover(identifier);
-		DiscoveryInformation discovered = openIdManager.associate(discoveries);
+		List discoveries = getManager().discover(identifier);
+		DiscoveryInformation discovered = getManager().associate(discoveries);
 		request.session().attribute("openid-disc", discovered);
-		AuthRequest authenticationRequest = openIdManager.authenticate(discovered, returnUrl);
+		AuthRequest authenticationRequest = getManager().authenticate(discovered, returnUrl);
 		response.redirect(authenticationRequest.getDestinationUrl(true));
 	}
 	
@@ -106,7 +112,7 @@ public class LoginHandler extends RequestHandlerForFreeMarker implements Constan
 		if (queryString != null && queryString.length() > 0) {
 			receivingURL += "?" + queryString;
 		}
-		VerificationResult verification = openIdManager.verify(receivingURL, response, discovered);
+		VerificationResult verification = getManager().verify(receivingURL, response, discovered);
 		Identifier verified = verification.getVerifiedId();
 		if (verified != null) {
 			AuthSuccess authSuccess = (AuthSuccess) verification.getAuthResponse();
