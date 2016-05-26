@@ -31,9 +31,9 @@ import spark.Response;
 public class LoginHandler extends RequestHandlerForFreeMarker implements Constants {
 
 	private static ConsumerManager openIdManager = null;
-	
-	private static ConsumerManager getManager(){
-		if(openIdManager == null){
+
+	private static ConsumerManager getManager() {
+		if (openIdManager == null) {
 			openIdManager = new ConsumerManager();
 			openIdManager.setAssociations(new InMemoryConsumerAssociationStore());
 			openIdManager.setNonceVerifier(new InMemoryNonceVerifier(5000));
@@ -44,7 +44,7 @@ public class LoginHandler extends RequestHandlerForFreeMarker implements Constan
 
 	@Override
 	public ModelAndView handle(Request request, Response response) throws Exception {
-		
+
 		MyApp.logger.info("authenticating with openid");
 
 		if ("true".equals(request.queryParams("is_return"))) {
@@ -93,7 +93,7 @@ public class LoginHandler extends RequestHandlerForFreeMarker implements Constan
 		AuthRequest authenticationRequest = getManager().authenticate(discovered, returnUrl);
 		response.redirect(authenticationRequest.getDestinationUrl(true));
 	}
-	
+
 	private void processOpenIdAuthenticationReturn(Request request, Response response)
 			throws MessageException, DiscoveryException, AssociationException {
 		Identifier identifier = verifyOpenIdResponse(request);
@@ -101,7 +101,7 @@ public class LoginHandler extends RequestHandlerForFreeMarker implements Constan
 			request.session().attribute(SESSION_ATTRIBUTE_IDENTIFIER, identifier);
 		}
 	}
-	
+
 	private Identifier verifyOpenIdResponse(Request request)
 			throws MessageException, DiscoveryException, AssociationException {
 
@@ -112,6 +112,10 @@ public class LoginHandler extends RequestHandlerForFreeMarker implements Constan
 		if (queryString != null && queryString.length() > 0) {
 			receivingURL += "?" + queryString;
 		}
+		System.out.println(receivingURL);
+		response.getParameters().stream().forEach((param) -> {
+			System.out.println(param + " = " + response.getParameterValue(param.toString()));
+		});
 		VerificationResult verification = getManager().verify(receivingURL, response, discovered);
 		Identifier verified = verification.getVerifiedId();
 		if (verified != null) {
@@ -124,7 +128,7 @@ public class LoginHandler extends RequestHandlerForFreeMarker implements Constan
 		return null;
 
 	}
-	
+
 	/**
 	 * ParameterList constructor expects a Map, and Spark's
 	 * request.queryParamsMap doesn't implement a Map interface for some reason
@@ -142,6 +146,5 @@ public class LoginHandler extends RequestHandlerForFreeMarker implements Constan
 		});
 		return params;
 	}
-
 
 }
