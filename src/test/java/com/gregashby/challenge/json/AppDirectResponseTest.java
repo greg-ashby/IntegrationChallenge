@@ -24,7 +24,7 @@ public class AppDirectResponseTest {
 				+ "'returnUrl':null,'links':[]}";
 
 		Gson gson = new Gson();
-		AppDirectResponse result = gson.fromJson(json, AppDirectResponse.class);
+		AppDirectJsonResponse result = gson.fromJson(json, AppDirectJsonResponse.class);
 
 		assertEquals("SUBSCRIPTION_ORDER", result.getType());
 		assertEquals("ashbygreg-test", result.getMarketplace().getPartner());

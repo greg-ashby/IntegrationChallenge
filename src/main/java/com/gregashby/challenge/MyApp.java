@@ -40,7 +40,8 @@ import com.gregashby.challenge.accounts.Account;
 import com.gregashby.challenge.accounts.AccountNotFoundException;
 import com.gregashby.challenge.accounts.Accounts;
 import com.gregashby.challenge.db.DbInitializer;
-import com.gregashby.challenge.json.AppDirectResponse;
+import com.gregashby.challenge.handlers.CreateSubscriptionHandler;
+import com.gregashby.challenge.json.AppDirectJsonResponse;
 import com.gregashby.challenge.json.JsonTransformer;
 import com.gregashby.challenge.oauth.MyOAuthConsumer;
 
@@ -59,7 +60,7 @@ import spark.template.freemarker.FreeMarkerEngine;
  * @author gregashby
  *
  */
-public class MyApp implements SparkApplication, AppDirectConstants {
+public class MyApp implements SparkApplication, Constants {
 
 	private static final String SESSION_ATTRIBUTE_IDENTIFIER = "identifier";
 	/**
@@ -69,11 +70,7 @@ public class MyApp implements SparkApplication, AppDirectConstants {
 	 * the stub for loading the routes and handlers
 	 */
 
-	private static final String ENV_CONSUMER_SECRET = "consumer-secret";
-	private static final String ENV_CONSUMER_KEY = "consumer-key";
-	private static final String PARAM_EVENT_URL = "eventUrl";
-	private static final String ENV_API_DOMAIN = "api-domain";
-	private static Logger logger = LoggerFactory.getLogger("default");
+	public static Logger logger = LoggerFactory.getLogger("default");
 
 	private ConsumerManager openIdManager = null;
 
@@ -366,7 +363,7 @@ public class MyApp implements SparkApplication, AppDirectConstants {
 	private void initSubscriptionEndPoints() {
 
 		get("/subscription/create", (request, response) -> {
-			return handleCreateSubscription(request);
+			return new CreateSubscriptionHandler().handle(request, response);
 		}, new JsonTransformer());
 
 		get("/subscription/cancel", (request, response) -> {
@@ -390,7 +387,7 @@ public class MyApp implements SparkApplication, AppDirectConstants {
 			return createErrorResult(ERROR_UNKNOWN, "An unknown error occurred");
 		}
 
-		AppDirectResponse json = parseResponse(signedFetch);
+		AppDirectJsonResponse json = parseResponse(signedFetch);
 		if (FLAG_STATELESS.equals(json.getFlag())) {
 			return createSuccessResult();
 		}
@@ -440,7 +437,7 @@ public class MyApp implements SparkApplication, AppDirectConstants {
 			return createErrorResult(ERROR_UNKNOWN, "An unknown error occurred");
 		}
 
-		AppDirectResponse json = parseResponse(signedFetch);
+		AppDirectJsonResponse json = parseResponse(signedFetch);
 		if (FLAG_STATELESS.equals(json.getFlag())) {
 			return createSuccessResult();
 		}
@@ -487,7 +484,7 @@ public class MyApp implements SparkApplication, AppDirectConstants {
 			return createErrorResult(ERROR_UNKNOWN, "An unknown error occurred");
 		}
 
-		AppDirectResponse json = parseResponse(signedFetch);
+		AppDirectJsonResponse json = parseResponse(signedFetch);
 		if (FLAG_STATELESS.equals(json.getFlag())) {
 			return createSuccessResult();
 		}
@@ -541,11 +538,11 @@ public class MyApp implements SparkApplication, AppDirectConstants {
 	 * 
 	 * @throws IOException
 	 */
-	private AppDirectResponse parseResponse(HttpURLConnection connection) throws IOException {
+	private AppDirectJsonResponse parseResponse(HttpURLConnection connection) throws IOException {
 		String json = extractJsonFromRequest(connection);
 		logger.info(json);
 		Gson gson = new Gson();
-		AppDirectResponse appDirectResponse = gson.fromJson(json, AppDirectResponse.class);
+		AppDirectJsonResponse appDirectResponse = gson.fromJson(json, AppDirectJsonResponse.class);
 		return appDirectResponse;
 	}
 

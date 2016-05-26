@@ -1,6 +1,6 @@
 package com.gregashby.challenge.json;
 
-public class AppDirectResponse {
+public class AppDirectJsonResponse {
 	
 	private String type = null;
 	private Marketplace marketplace = null;
