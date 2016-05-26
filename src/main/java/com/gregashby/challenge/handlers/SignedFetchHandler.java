@@ -160,9 +160,15 @@ public abstract class SignedFetchHandler extends RequestHandlerForJson implement
 		String consumerKey = System.getenv(ENV_CONSUMER_KEY);
 		String consumerSecret = System.getenv(ENV_CONSUMER_SECRET);
 
+		String originalOauth = request.params("authorization");
+		String originalTimeStamp = extractString("oauth_timestamp=\"", originalOauth);
+		String originalNonce = extractString("oauth_nonce=\"", originalOauth);
+		
 		URL url = new URL(request.url());
 		HttpURLConnection incomingRequest = (HttpURLConnection) url.openConnection();
 		MyOAuthConsumer consumer = new MyOAuthConsumer(consumerKey, consumerSecret);
+		consumer.setPresetTimestamp(originalTimeStamp);
+		consumer.setPresetNonce(originalNonce);
 		consumer.sign(incomingRequest);
 		
 		MyApp.logger.info("RECALCULATED OAUTH HEADER IS {}", consumer.getAuthHeader());
@@ -173,6 +179,14 @@ public abstract class SignedFetchHandler extends RequestHandlerForJson implement
 		isValidTimestamp = true;
 
 		return (isValidOAuth && isValidTimestamp);
+	}
+
+
+	private String extractString(String key, String originalOauth) {
+		String temp = originalOauth.substring(originalOauth.indexOf(key) + key.length());
+		temp = temp.substring(temp.indexOf('"'));
+		MyApp.logger.info("value for {} is {}", key, temp);
+		return temp;
 	}
 
 }
