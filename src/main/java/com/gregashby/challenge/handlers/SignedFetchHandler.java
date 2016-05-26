@@ -161,8 +161,8 @@ public abstract class SignedFetchHandler extends RequestHandlerForJson implement
 		String consumerKey = System.getenv(ENV_CONSUMER_KEY);
 		String consumerSecret = System.getenv(ENV_CONSUMER_SECRET);
 
-		String originalOauth = request.params("authorization");
-		MyApp.logger.info("ORIGINAL AUTHORIZATION IS {}", request.headers("authorization"));
+		String originalOauth = request.headers("authorization");
+		MyApp.logger.info("ORIGINAL AUTHORIZATION IS {}", originalOauth);
 		
 		String originalTimeStamp = Utils.extractString("oauth_timestamp=\"", originalOauth);
 		String originalNonce = Utils.extractString("oauth_nonce=\"", originalOauth);
