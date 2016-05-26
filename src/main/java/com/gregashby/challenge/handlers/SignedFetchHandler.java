@@ -162,6 +162,8 @@ public abstract class SignedFetchHandler extends RequestHandlerForJson implement
 		String consumerSecret = System.getenv(ENV_CONSUMER_SECRET);
 
 		String originalOauth = request.params("authorization");
+		MyApp.logger.info("ORIGINAL AUTHORIZATION IS {}", request.headers("authorization"));
+		
 		String originalTimeStamp = Utils.extractString("oauth_timestamp=\"", originalOauth);
 		String originalNonce = Utils.extractString("oauth_nonce=\"", originalOauth);
 		
@@ -173,7 +175,6 @@ public abstract class SignedFetchHandler extends RequestHandlerForJson implement
 		consumer.sign(incomingRequest);
 		
 		MyApp.logger.info("RECALCULATED OAUTH HEADER IS {}", consumer.getAuthHeader());
-		MyApp.logger.info("ORIGINAL WAS {}", request.headers("authorization"));
 		
 		// TODO make sure timestamp is < 10 seconds old to prevent playbacks
 		// (easier than tracking nonces)
