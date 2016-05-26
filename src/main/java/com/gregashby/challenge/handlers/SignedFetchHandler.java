@@ -13,6 +13,7 @@ import com.gregashby.challenge.Constants;
 import com.gregashby.challenge.MyApp;
 import com.gregashby.challenge.json.AppDirectJsonResponse;
 import com.gregashby.challenge.oauth.MyOAuthConsumer;
+import com.gregashby.challenge.utils.Utils;
 
 import oauth.signpost.exception.OAuthCommunicationException;
 import oauth.signpost.exception.OAuthExpectationFailedException;
@@ -161,8 +162,8 @@ public abstract class SignedFetchHandler extends RequestHandlerForJson implement
 		String consumerSecret = System.getenv(ENV_CONSUMER_SECRET);
 
 		String originalOauth = request.params("authorization");
-		String originalTimeStamp = extractString("oauth_timestamp=\"", originalOauth);
-		String originalNonce = extractString("oauth_nonce=\"", originalOauth);
+		String originalTimeStamp = Utils.extractString("oauth_timestamp=\"", originalOauth);
+		String originalNonce = Utils.extractString("oauth_nonce=\"", originalOauth);
 		
 		URL url = new URL(request.url());
 		HttpURLConnection incomingRequest = (HttpURLConnection) url.openConnection();
@@ -182,11 +183,6 @@ public abstract class SignedFetchHandler extends RequestHandlerForJson implement
 	}
 
 
-	private String extractString(String key, String originalOauth) {
-		String temp = originalOauth.substring(originalOauth.indexOf(key) + key.length());
-		temp = temp.substring(temp.indexOf('"'));
-		MyApp.logger.info("value for {} is {}", key, temp);
-		return temp;
-	}
+
 
 }
