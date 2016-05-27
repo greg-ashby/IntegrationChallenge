@@ -30,53 +30,53 @@ NOTE: this utilizes Java 8 features (e.g. lambdas) so needs to be run with a 1.8
 
 The main handler classes are:
 
-*   RequestHandlerForJson <-- base class for all handlers that expect to return json
+- RequestHandlerForJson <-- base class for all handlers that expect to return json
 
-  *   SignedFetchHandler <-- base class for all handlers that need to perform a signed fetch to an API
+  - SignedFetchHandler <-- base class for all handlers that need to perform a signed fetch to an API
   
-    *   all the subscription handlers
+    - all the subscription handlers
     
-*   RequestHandlerForFreeMarker <-- base class for all handlers that expect their results to be rendered by a FreeMarkerEngine class
+- RequestHandlerForFreeMarker <-- base class for all handlers that expect their results to be rendered by a FreeMarkerEngine class
 
 
 ## Getting Started
 
-1. Clone the application from Github and cd into the folder
+- Clone the application from Github and cd into the folder
 
-2. Setup environment variables:
-	**consumer-key** = the oauth consumer key for App Direct Integrations
-	**consumer-secret** = the oauth secret
-	**JDBC_DATABASE_URL** = the jdbc url to either a postgresql or mysql database
-  a. e.g. jdbc:mysql://localhost:3306/<db_name>?user=<db_user_id>&password=<pwd>
-  b. note that I didn't mock out the db for unit tests, so they require this to run, which will cause builds to fail if they require passing tests first
-  c. the application has code to initialize the database. You just need to ensure the user the database exists and the user you provide has rights to create and drop tables
+- Setup environment variables:
+  - **consumer-key** = the oauth consumer key for App Direct Integrations
+  - **consumer-secret** = the oauth secret
+  - **JDBC_DATABASE_URL** = the jdbc url to either a postgresql or mysql database
+    - e.g. jdbc:mysql://localhost:3306/<db_name>?user=<db_user_id>&password=<pwd>
+    - note that I didn't mock out the db for unit tests, so they require this to run, which will cause builds to fail if they require passing tests first
+    - the application has code to initialize the database. You just need to ensure the user the database exists and the user you provide has rights to create and drop tables
     
-3. run Maven to build the war file (war file will be under /target)
-	mvn clean
-	mvn -Dmaven.test.skip=true package
+- run Maven to build the war file (war file will be under /target)
+  - mvn clean
+  - mvn -Dmaven.test.skip=true package
  
-4. To deploy to heroku (for example)
-  a. ensure you have a heroku account and have installed and logged in to the heroku toolbelt
-    i. great tutorial here if you need it [https://devcenter.heroku.com/articles/getting-started-with-java#introduction]
-  b. create the app
-	heroku create <name> 
-  c. configure the same environment variables as per above
-	heroku config:set NAME="VALUE"
-  d. deploy the app
-	git push heroku master
-  e. open the app
-	heroku app
+- To deploy to heroku (for example)
+  - ensure you have a heroku account and have installed and logged in to the heroku toolbelt
+    - great tutorial here if you need it [https://devcenter.heroku.com/articles/getting-started-with-java#introduction]
+  - create the app
+    - heroku create <name> 
+  - configure the same environment variables as per above
+    - heroku config:set NAME="VALUE"
+  - deploy the app
+    - git push heroku master
+  - open the app
+    - heroku app
 
-5. To test with App Direct
-  a. create a test product and configure editions
-  b. configure end points
-    i.  <baseurl_to_your_app>/subscription/create?eventUrl={eventUrl}
-    ii. <baseurl_to_your_app>/subscription/change?eventUrl={eventUrl}
-    iii. <baseurl_to_your_app>/subscription/cancel?eventUrl={eventUrl}
-    iv. <baseurl_to_your_app>/subscription/status?eventUrl={eventUrl}
-  c. configure authentication
-    i. <baseurl_to_your_app>/login?openid_identifier={openid}
-	ii. <baseurl_to_your_app>/login*
+- To test with App Direct
+  - create a test product and configure editions
+  - configure end points
+    - <baseurl_to_your_app>/subscription/create?eventUrl={eventUrl}
+    - <baseurl_to_your_app>/subscription/change?eventUrl={eventUrl}
+    - <baseurl_to_your_app>/subscription/cancel?eventUrl={eventUrl}
+    - <baseurl_to_your_app>/subscription/status?eventUrl={eventUrl}
+  - configure authentication
+    - <baseurl_to_your_app>/login?openid_identifier={openid}
+	- <baseurl_to_your_app>/login*
 
 
 
