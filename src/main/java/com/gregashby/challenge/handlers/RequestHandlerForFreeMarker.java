@@ -10,7 +10,10 @@ import spark.Request;
 import spark.Response;
 
 /**
- * Base class for any request handlers expected to render an html view using FreeMarker
+ * Base class for any request handlers expected to render an html view using FreeMarker.
+ * Subclasses should use the createAttributes... method to ensure they have all the 
+ * expected attributes for the ftl templates, then add any additional attributes they 
+ * want before returning.
  * 
  * @author gregashby
  *

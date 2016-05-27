@@ -67,21 +67,21 @@ public class MyApp implements SparkApplication, Constants {
 		get("/login", (request, response) -> {
 			return new LoginHandler().handle(request, response);
 		}, new FreeMarkerEngine());
-
+		
 		get("/logout", (request, response) -> {
 			return new LogoutHandler().handle(request, response);
 		}, new FreeMarkerEngine());
 	}
 
+	
 	private void initSecureRoute() {
-
 		before("/secured-page", (request, response) -> {
 			if (request.session().attribute(SESSION_ATTRIBUTE_IDENTIFIER) == null) {
 				logger.info("unauthorized");
 				halt(401, "you are not authorized");
 			}
 		});
-
+		
 		get("/secured-page", (request, response) -> {
 			return new SecuredPageHandler().handle(request, response);
 		}, new FreeMarkerEngine());

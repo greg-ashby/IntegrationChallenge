@@ -20,7 +20,6 @@ import com.gregashby.challenge.Constants;
 public class Accounts implements Constants{
 
 	public static void createAccount(Account account) throws Exception {
-
 		try (Connection connection = DriverManager.getConnection(System.getenv(ENV_JDBC_DATABASE_URL))) {
 
 			String insertSql = "INSERT INTO accounts VALUES (?, ?, ?, ?, ?)";
@@ -41,7 +40,6 @@ public class Accounts implements Constants{
 
 			account.setId(uuid);
 		}
-
 	}
 
 	public static Account fetchAccount(String uuid) throws Exception {
@@ -56,7 +54,6 @@ public class Accounts implements Constants{
 				return loadAccountFromResultSet(result);
 			}
 			return null;
-
 		}
 	}
 
@@ -90,8 +87,7 @@ public class Accounts implements Constants{
 			if (rowsAffected == 0) {
 				throw new AccountNotFoundException();
 			}
-		}
-		
+		}	
 	}
 
 	public static List<Account> getAll() throws SQLException {
@@ -107,8 +103,7 @@ public class Accounts implements Constants{
 		return accounts;
 	}
 
-	public static void update(Account account) throws Exception {
-		
+	public static void update(Account account) throws Exception {	
 		try (Connection connection = DriverManager.getConnection(System.getenv(ENV_JDBC_DATABASE_URL))) {
 
 			String updateSql = "UPDATE accounts SET email=?, companyId=?, editionCode=?, status=? WHERE uuid=?";
@@ -126,5 +121,4 @@ public class Accounts implements Constants{
 			}
 		}
 	}
-
 }

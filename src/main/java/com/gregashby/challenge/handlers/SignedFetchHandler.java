@@ -13,9 +13,8 @@ import java.util.Map;
 import com.google.gson.Gson;
 import com.gregashby.challenge.Constants;
 import com.gregashby.challenge.json.AppDirectJsonResponse;
-import com.gregashby.challenge.oauth.MyOAuthConsumer;
-import com.gregashby.challenge.utils.Utils;
 
+import oauth.signpost.basic.DefaultOAuthConsumer;
 import oauth.signpost.exception.OAuthCommunicationException;
 import oauth.signpost.exception.OAuthExpectationFailedException;
 import oauth.signpost.exception.OAuthMessageSignerException;
@@ -31,6 +30,15 @@ import spark.Response;
  */
 public abstract class SignedFetchHandler extends RequestHandlerForJson implements Constants {
 
+	/**
+	 * Validates the OAuth Notification Request, then performs a signed fetch
+	 * and checks to ensure that the response code is 200 and the FLAG in the
+	 * response is not stateless. Finally hands off to subclasses to handle
+	 * their specific logic with the parsed json data
+	 * 
+	 * @see com.gregashby.challenge.handlers.RequestHandlerForJson#handle(spark.Request,
+	 *      spark.Response)
+	 */
 	@Override
 	public Map<String, Object> handle(Request request, Response response) throws MalformedURLException, IOException,
 			OAuthMessageSignerException, OAuthExpectationFailedException, OAuthCommunicationException, Exception {
@@ -94,7 +102,7 @@ public abstract class SignedFetchHandler extends RequestHandlerForJson implement
 		outgoingRequest.setRequestProperty("Content-Type", "application/json");
 		outgoingRequest.setRequestProperty("Accept", "application/json");
 
-		MyOAuthConsumer consumer = new MyOAuthConsumer(consumerKey, consumerSecret);
+		DefaultOAuthConsumer consumer = new DefaultOAuthConsumer(consumerKey, consumerSecret);
 		consumer.sign(outgoingRequest);
 		outgoingRequest.connect();
 		logger.info("Request sent! Response code is {}", outgoingRequest.getResponseCode());
@@ -155,55 +163,43 @@ public abstract class SignedFetchHandler extends RequestHandlerForJson implement
 	private boolean isValidOAuthRequest(Request request, Response response) throws IOException,
 			OAuthMessageSignerException, OAuthExpectationFailedException, OAuthCommunicationException {
 
-		logger.info("************* REQUEST ************");
-		logger.info("BODY: {}", request.body());
-		request.attributes().stream().forEach((name) -> {
-			logger.info("ATTRIBUTE {} = {}", name, request.attribute(name));
-		});
-		request.headers().stream().forEach((name) -> {
-			logger.info("HEADER {} = {}", name, request.headers(name));
-		});
-		logger.info("QUERY STRING: {}", request.queryString());
-		request.queryParams().stream().forEach((name) -> {
-			logger.info("QUERY PARAM {} = {}", name, request.queryParams(name));
-		});
-		logger.info("METHOD: {}", request.requestMethod());
-		logger.info("URL: {}", request.url());
-		logger.info("************* END ************");
-
-		boolean isValidOAuth = false;
-		boolean isValidTimestamp = false;
-
-		// TODO Implement oauth verification
-		isValidOAuth = true;
-		String consumerKey = System.getenv(ENV_CONSUMER_KEY);
-		String consumerSecret = System.getenv(ENV_CONSUMER_SECRET);
-
-		String originalOauth = request.headers("authorization");
-		logger.info("ORIGINAL AUTHORIZATION IS {}", originalOauth);
-
-		String originalTimeStamp = Utils.extractString("oauth_timestamp=\"", originalOauth);
-		String originalNonce = Utils.extractString("oauth_nonce=\"", originalOauth);
-		String originalSignature = Utils.extractString("oauth_signature=\"", originalOauth);
-
-		URL url = new URL(request.url());
-
-		HttpURLConnection incomingRequest = (HttpURLConnection) url.openConnection();
-		MyOAuthConsumer consumer = new MyOAuthConsumer(consumerKey, consumerSecret);
-		consumer.setPresetTimestamp(originalTimeStamp);
-		consumer.setPresetNonce(originalNonce);
-		consumer.sign(incomingRequest);
-
-		logger.info("RECALCULATED OAUTH HEADER IS {}", consumer.getAuthHeader());
-
-		String newSignature = Utils.extractString("oauth_signature=\"", consumer.getAuthHeader());
-		logger.info("********** signature {}, new {}", originalSignature, newSignature);
-
-		// TODO make sure timestamp is < 10 seconds old to prevent playbacks
-		// (easier than tracking nonces)
-		isValidTimestamp = true;
-
-		return (isValidOAuth && isValidTimestamp);
+		/**
+		 * TODO implement oauth validation
+		 * 
+		 * I attempted this several times (see Utils.generateSignature, and the
+		 * UtilsTest case too). AFAIK, all that's needed is constructing the
+		 * signature base string correctly and then hashing it with the
+		 * consumer-secret (since there's no token pair involved in this case).
+		 * However every tweak I've tried on the key and sbs doesn't result in
+		 * the same signature, so I can't validate it. Would need to discuss
+		 * with App Direct to see what I'm missing here :)
+		 */
+		// Algorithm according to Twitter docs
+		// 1. get the http method (get/post)
+		// 2. get the base url (https://…) //no query string
+		// 3. get all parameters
+		// - query string
+		// - include all the auth parameters (nonce, etc)
+		// 4. percent encode each parameter key and value
+		// 5. sort the list alphabetically by encoded key
+		// 6. for each pair:
+		// - append encoded key
+		// - append ‘=‘
+		// - append encoded value
+		// - if there’s more pairs, append ‘&’
+		// 7. Construct the signature base string:
+		// - HTTP Method in UPPERCASE
+		// - ‘&’
+		// - percent encoded url
+		// - ‘&’
+		// - percent encoded parameter string
+		// 8. create signing key
+		// - consumer secret
+		// - ‘&’
+		// - token secret // what to do if this is null? looks like you append
+		// the & still
+		// 9. pass the signature base string and key to the signing algorithm
+		return true;
 	}
 
 }
