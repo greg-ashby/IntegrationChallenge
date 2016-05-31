@@ -203,7 +203,7 @@ public abstract class SignedFetchHandler extends RequestHandlerForJson implement
 
 		logger.info(
 				">>>>>>>>>> REQUEST METHOD: {}\n, REQUEST URL: {}\n, REQUEST QUERY STRING: {}\n, REQUEST OAUTH HEADERS: {}",
-				request.requestMethod(), request.url(), request.queryString(), request.attribute("authorization"));
+				request.requestMethod(), request.url(), request.queryString(), request.headers("authorization"));
 		return true;
 	}
 
