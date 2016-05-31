@@ -48,13 +48,13 @@ public class UtilsTest implements Constants {
 	public void testGenerateSignature()
 			throws UnsupportedEncodingException, NoSuchAlgorithmException, InvalidKeyException {
 		
-		String sbs = "GET&http://ashby-integrationchallenge.herokuapp.com/subscription/change";
-		sbs += "&eventUrl=https%3A%2F%2Fashbygreg-test.byappdirect.com%2Fapi%2Fintegration%2Fv1%2Fevents%2Ff2d1b0ff-7cfd-4a4b-a078-83d8e305c63e";
-		sbs += "&oauth_consumer_key=ashbyintegrationchallenge-117319";
-		sbs += "&oauth_nonce=-8703801150989267741";
-		sbs += "&oauth_signature_method=HMAC-SHA1";
-		sbs += "&oauth_timestamp=1464303351";
-		sbs += "&oauth_version=1.0";
+		String sbs = "GET&";
+		sbs += "http%3A%2F%2Fashby-integrationchallenge.herokuapp.com%2Fsubscription%2Fchange%3FeventUrl%3Dhttps%253A%252F%252Fashbygreg-test.byappdirect.com%252Fapi%252Fintegration%252Fv1%252Fevents%252Ff2d1b0ff-7cfd-4a4b-a078-83d8e305c63e";
+		sbs += "&oauth_consumer_key%3Dashbyintegrationchallenge-117319";
+		sbs += "%26oauth_nonce%3D-8703801150989267741";
+		sbs += "%26oauth_signature_method%3DHMAC-SHA1";
+		sbs += "%26oauth_timestamp%3D1464303351";
+		sbs += "%26oauth_version%3D1.0";
 		
 		String generatedSignature = Utils.generateSignature(sbs);
 		

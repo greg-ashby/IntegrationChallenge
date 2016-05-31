@@ -47,7 +47,7 @@ The main handler classes are:
   - **consumer-key** = the oauth consumer key for App Direct Integrations
   - **consumer-secret** = the oauth secret
   - **JDBC_DATABASE_URL** = the jdbc url to either a postgresql or mysql database
-    - e.g. jdbc:mysql://localhost:3306/<db_name>?user=<db_user_id>&password=<pwd>
+    - e.g. jdbc:mysql://localhost:3306/_db_name_?user=_db_user_id_&password=_pwd_
     - note that I didn't mock out the db for unit tests, so they require this to run, which will cause builds to fail if they require passing tests first
     - the application has code to initialize the database. You just need to ensure the user the database exists and the user you provide has rights to create and drop tables
     
@@ -59,24 +59,24 @@ The main handler classes are:
   - ensure you have a heroku account and have installed and logged in to the heroku toolbelt
     - great tutorial here if you need it [https://devcenter.heroku.com/articles/getting-started-with-java#introduction]
   - create the app
-    - heroku create <name> 
+    - heroku create _name_ 
   - configure the same environment variables as per above
     - heroku config:set NAME="VALUE"
   - deploy the app
     - git push heroku master
   - open the app
-    - heroku app
+    - heroku open
 
 - To test with App Direct
   - create a test product and configure editions
   - configure end points
-    - <baseurl_to_your_app>/subscription/create?eventUrl={eventUrl}
-    - <baseurl_to_your_app>/subscription/change?eventUrl={eventUrl}
-    - <baseurl_to_your_app>/subscription/cancel?eventUrl={eventUrl}
-    - <baseurl_to_your_app>/subscription/status?eventUrl={eventUrl}
+    - _baseurl_to_your_app_/subscription/create?eventUrl={eventUrl}
+    - _baseurl_to_your_app_/subscription/change?eventUrl={eventUrl}
+    - _baseurl_to_your_app_/subscription/cancel?eventUrl={eventUrl}
+    - _baseurl_to_your_app_/subscription/status?eventUrl={eventUrl}
   - configure authentication
-    - <baseurl_to_your_app>/login?openid_identifier={openid}
-	- <baseurl_to_your_app>/login*
+    - _baseurl_to_your_app_/login?openid_identifier={openid}
+	- _baseurl_to_your_app_/login*
 
 
 

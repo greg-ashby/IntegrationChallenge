@@ -50,6 +50,7 @@ public class MyApp implements SparkApplication, Constants {
 	 */
 	public void init() {
 
+		System.setProperty("debug", "yes please");
 		initDb();
 		initSubscriptionEndPoints();
 		initViewRoutes();
