@@ -47,7 +47,7 @@ public class UtilsTest implements Constants {
 	@Test
 	public void testGenerateSignature()
 			throws UnsupportedEncodingException, NoSuchAlgorithmException, InvalidKeyException {
-		
+
 		String sbs = "GET&";
 		sbs += "http%3A%2F%2Fashby-integrationchallenge.herokuapp.com%2Fsubscription%2Fchange%3FeventUrl%3Dhttps%253A%252F%252Fashbygreg-test.byappdirect.com%252Fapi%252Fintegration%252Fv1%252Fevents%252Ff2d1b0ff-7cfd-4a4b-a078-83d8e305c63e";
 		sbs += "&oauth_consumer_key%3Dashbyintegrationchallenge-117319";
@@ -55,21 +55,37 @@ public class UtilsTest implements Constants {
 		sbs += "%26oauth_signature_method%3DHMAC-SHA1";
 		sbs += "%26oauth_timestamp%3D1464303351";
 		sbs += "%26oauth_version%3D1.0";
-		
+
 		String generatedSignature = Utils.generateSignature(sbs);
-		
+
 		String actualOauthSignature = "cCcTg6QEgNQvzFD5UhQC0WTkJYg%3D";
-		
+
 		System.out.println(generatedSignature);
 		System.out.println(actualOauthSignature);
-		
+
 		// this is from an actual request in my logs, none of the modifications
 		// I've tried in generating the key or signature base string generate
 		// the same oauth_signature. Would need to ask App Direct what I'm
 		// missing to generate that correctly.
-		
-		//assertEquals(actualOauthSignature, generatedSignature);
+
+		// assertEquals(actualOauthSignature, generatedSignature);
 		// commented out so builds succeed
+	}
+
+	@Test
+	public void testKnownSignatureAndSbs() throws InvalidKeyException, UnsupportedEncodingException, NoSuchAlgorithmException {
+		String sbs = "GET&https%3A%2F%2Fashbygreg-test.byappdirect.com%2Fapi%2Fintegration%2Fv1%2Fevents%2F9533b7e0-129b-437d-91cf-aa2491633b44";
+		sbs += "&oauth_consumer_key%3Dashbyintegrationchallenge-117319";
+		sbs += "%26oauth_nonce%3D-2719836425889205628";
+		sbs += "%26oauth_signature_method%3DHMAC-SHA1";
+		sbs += "%26oauth_timestamp%3D1464719427";
+		sbs += "%26oauth_version%3D1.0";
+		String generatedSignature = Utils.generateSignature(sbs);
+
+		String actualOauthSignature = "8nN3ZbTBXPWCrJxx0olhxguCHug=";
+
+		System.out.println(generatedSignature);
+		System.out.println(actualOauthSignature);
 	}
 
 }

@@ -32,7 +32,7 @@ public class Utils implements Constants {
 		// borrowed this code from SignPosts MessageSigner classes...
 		String keyString = OAuth.percentEncode(System.getenv(ENV_CONSUMER_SECRET)) + '&'; // no
 		byte[] keyBytes = keyString.getBytes(OAuth.ENCODING);
-		byte[] text = OAuth.percentEncode(signatureBaseString).getBytes(OAuth.ENCODING);
+		byte[] text = signatureBaseString.getBytes(OAuth.ENCODING);
 
 		SecretKey key = new SecretKeySpec(keyBytes, "HmacSHA1");
 		Mac mac = Mac.getInstance("HmacSHA1");

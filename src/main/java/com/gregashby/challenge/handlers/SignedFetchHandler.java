@@ -13,6 +13,7 @@ import java.util.Map;
 import com.google.gson.Gson;
 import com.gregashby.challenge.Constants;
 import com.gregashby.challenge.json.AppDirectJsonResponse;
+import com.gregashby.challenge.oauth.MyOAuthConsumer;
 
 import oauth.signpost.basic.DefaultOAuthConsumer;
 import oauth.signpost.exception.OAuthCommunicationException;
@@ -102,7 +103,7 @@ public abstract class SignedFetchHandler extends RequestHandlerForJson implement
 		outgoingRequest.setRequestProperty("Content-Type", "application/json");
 		outgoingRequest.setRequestProperty("Accept", "application/json");
 
-		DefaultOAuthConsumer consumer = new DefaultOAuthConsumer(consumerKey, consumerSecret);
+		DefaultOAuthConsumer consumer = new MyOAuthConsumer(consumerKey, consumerSecret);
 		consumer.sign(outgoingRequest);
 		outgoingRequest.connect();
 		logger.info("Request sent! Response code is {}", outgoingRequest.getResponseCode());
