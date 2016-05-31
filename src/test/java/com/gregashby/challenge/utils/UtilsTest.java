@@ -73,19 +73,14 @@ public class UtilsTest implements Constants {
 	}
 
 	@Test
-	public void testKnownSignatureAndSbs() throws InvalidKeyException, UnsupportedEncodingException, NoSuchAlgorithmException {
-		String sbs = "GET&https%3A%2F%2Fashbygreg-test.byappdirect.com%2Fapi%2Fintegration%2Fv1%2Fevents%2F9533b7e0-129b-437d-91cf-aa2491633b44";
-		sbs += "&oauth_consumer_key%3Dashbyintegrationchallenge-117319";
-		sbs += "%26oauth_nonce%3D-2719836425889205628";
-		sbs += "%26oauth_signature_method%3DHMAC-SHA1";
-		sbs += "%26oauth_timestamp%3D1464719427";
-		sbs += "%26oauth_version%3D1.0";
+	public void testKnownSignatureAndBaseString()
+			throws InvalidKeyException, UnsupportedEncodingException, NoSuchAlgorithmException {
+		String sbs = "GET&https%3A%2F%2Fashbygreg-test.byappdirect.com%2Fapi%2Fintegration%2Fv1%2Fevents%2F066c0f3c-92a3-4c79-b691-47d9573a21be&oauth_consumer_key%3Dashbyintegrationchallenge-117319%26oauth_nonce%3D8337326373805737146%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1464720782%26oauth_version%3D1.0";
 		String generatedSignature = Utils.generateSignature(sbs);
 
-		String actualOauthSignature = "8nN3ZbTBXPWCrJxx0olhxguCHug=";
+		String actualOauthSignature = "NnNX2ZTfUf1RntuGdwMBs3Na1o8=";
 
-		System.out.println(generatedSignature);
-		System.out.println(actualOauthSignature);
+		assertEquals(actualOauthSignature, generatedSignature);
 	}
 
 }

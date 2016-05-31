@@ -200,6 +200,10 @@ public abstract class SignedFetchHandler extends RequestHandlerForJson implement
 		// - token secret // what to do if this is null? looks like you append
 		// the & still
 		// 9. pass the signature base string and key to the signing algorithm
+
+		logger.info(
+				">>>>>>>>>> REQUEST METHOD: {}\n, REQUEST URL: {}\n, REQUEST QUERY STRING: {}\n, REQUEST OAUTH HEADERS: {}",
+				request.requestMethod(), request.url(), request.queryString(), request.attribute("authorization"));
 		return true;
 	}
 

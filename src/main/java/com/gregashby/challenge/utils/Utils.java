@@ -1,5 +1,7 @@
 package com.gregashby.challenge.utils;
 
+import static com.gregashby.challenge.MyApp.logger;
+
 import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -30,14 +32,21 @@ public class Utils implements Constants {
 			throws UnsupportedEncodingException, NoSuchAlgorithmException, InvalidKeyException {
 
 		// borrowed this code from SignPosts MessageSigner classes...
-		String keyString = OAuth.percentEncode(System.getenv(ENV_CONSUMER_SECRET)) + '&'; // no
+		String keyString = OAuth.percentEncode(System.getenv(ENV_CONSUMER_SECRET)) + "&"; // no
 		byte[] keyBytes = keyString.getBytes(OAuth.ENCODING);
+
+		logger.info(">>>>> keyString: {}", keyString);
+		logger.info(">>>>> keyBytes: {}", keyBytes);
+
 		byte[] text = signatureBaseString.getBytes(OAuth.ENCODING);
 
 		SecretKey key = new SecretKeySpec(keyBytes, "HmacSHA1");
 		Mac mac = Mac.getInstance("HmacSHA1");
 		mac.init(key);
 
+		 logger.info(">>>>> sbsString: {}", signatureBaseString);
+         logger.info(">>>>> sbsBytes: {}", text);
+         
 		String generatedSignature = (new String(new Base64().encode(mac.doFinal(text))).trim());
 		return generatedSignature;
 
