@@ -48,17 +48,65 @@ public class UtilsTest implements Constants {
 	public void testGenerateSignature()
 			throws UnsupportedEncodingException, NoSuchAlgorithmException, InvalidKeyException {
 
-		String sbs = "GET&";
-		sbs += "http%3A%2F%2Fashby-integrationchallenge.herokuapp.com%2Fsubscription%2Fchange%3FeventUrl%3Dhttps%253A%252F%252Fashbygreg-test.byappdirect.com%252Fapi%252Fintegration%252Fv1%252Fevents%252Ff2d1b0ff-7cfd-4a4b-a078-83d8e305c63e";
-		sbs += "&oauth_consumer_key%3Dashbyintegrationchallenge-117319";
-		sbs += "%26oauth_nonce%3D-8703801150989267741";
-		sbs += "%26oauth_signature_method%3DHMAC-SHA1";
-		sbs += "%26oauth_timestamp%3D1464303351";
-		sbs += "%26oauth_version%3D1.0";
+		// 1. get the http method (get/post)
+		String method = "GET";
+		// 2. get the base url (https://…) //no query string
+		String url = "http://ashby-integrationchallenge.herokuapp.com/subscription/change";
 
-		String generatedSignature = Utils.generateSignature(sbs);
+		// 3. get all parameters
+		// - query string
+		// - include all the auth parameters (nonce, etc)
+		// 4. percent encode each parameter key and value
+		// 5. sort the list alphabetically by encoded key
+		String[][] parameters = {
+				{ OAuth.percentEncode("eventUrl"),
+						OAuth.percentEncode(
+								"https%3A%2F%2Fashbygreg-test.byappdirect.com%2Fapi%2Fintegration%2Fv1%2Fevents%2Fea18691e-e32b-4b3a-91f1-2defef8bf664") },
+				{ OAuth.percentEncode("oauth_consumer_key"), OAuth.percentEncode("ashbyintegrationchallenge-117319") },
+				{ OAuth.percentEncode("oauth_nonce"), OAuth.percentEncode("-4204394771771570501") },
+				{ OAuth.percentEncode("oauth_signature_method"), OAuth.percentEncode("HMAC-SHA1") },
+				{ OAuth.percentEncode("oauth_timestamp"), OAuth.percentEncode("1464722027") },
+				{ OAuth.percentEncode("oauth_version"), OAuth.percentEncode("1.0") } };
 
-		String actualOauthSignature = "cCcTg6QEgNQvzFD5UhQC0WTkJYg%3D";
+		// 6. for each pair:
+		// - append encoded key
+		// - append ‘=‘
+		// - append encoded value
+		// - if there’s more pairs, append ‘&’
+		String parameterString = "";
+		for (int x = 0; x < parameters.length; x++) {
+			if (x > 0) {
+				parameterString += "&";
+			}
+			parameterString += parameters[x][0];
+			parameterString += "=";
+			parameterString += parameters[x][1];
+		}
+
+		// 7. Construct the signature base string:
+		// - HTTP Method in UPPERCASE
+		// - ‘&’
+		// - percent encoded url
+		// - ‘&’
+		// - percent encoded parameter string
+		String baseString = method.toUpperCase();
+		baseString += "&";
+		baseString += OAuth.percentEncode(url);
+		baseString += "&";
+		baseString += OAuth.percentEncode(parameterString);
+
+		// 8. create signing key
+		// - consumer secret
+		// - ‘&’
+		// - token secret // what to do if this is null? looks like you append
+		// the & still
+		// done by utility method
+
+		// 9. pass the signature base string and key to the signing algorithm
+
+		String generatedSignature = Utils.generateSignature(baseString);
+
+		String actualOauthSignature = "QghfLjGFmhifkK0ZdaH8Si6DQCA%3D";
 
 		System.out.println(generatedSignature);
 		System.out.println(actualOauthSignature);
@@ -74,6 +122,7 @@ public class UtilsTest implements Constants {
 
 	@Test
 	public void testKnownSignatureAndBaseString()
+
 			throws InvalidKeyException, UnsupportedEncodingException, NoSuchAlgorithmException {
 		String sbs = "GET&https%3A%2F%2Fashbygreg-test.byappdirect.com%2Fapi%2Fintegration%2Fv1%2Fevents%2F066c0f3c-92a3-4c79-b691-47d9573a21be&oauth_consumer_key%3Dashbyintegrationchallenge-117319%26oauth_nonce%3D8337326373805737146%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1464720782%26oauth_version%3D1.0";
 		String generatedSignature = Utils.generateSignature(sbs);
